@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch People Live - Canlı Sohbet & Akış</title>
+    <title>Watch People Live - Canlı Akış & Sohbet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -28,7 +28,7 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col">
 
-    <!-- ANA UYGULAMA (Doğrudan Herkes Erişir) -->
+    <!-- ANA UYGULAMA -->
     <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto">
         <!-- Header -->
         <header class="bg-cardBg border-b border-slate-800 px-4 py-3 flex items-center justify-between">
@@ -55,40 +55,20 @@
                 <div id="usersList" class="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-2 text-sm"></div>
             </aside>
 
-            <!-- SAĞ ORTA: Sohbet / Post Tab -->
+            <!-- SAĞ ORTA: Sohbet / Post Tab (Varsayılan Akış) -->
             <main class="flex-1 flex flex-col bg-darkBg">
                 <!-- Tab Butonları -->
                 <div class="flex border-b border-slate-800 bg-cardBg/60">
-                    <button onclick="switchTab('chat')" id="tabChatBtn" class="flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-comments"></i> Özel Sohbet
-                    </button>
-                    <button onclick="switchTab('feed')" id="tabFeedBtn" class="flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
+                    <button onclick="switchTab('feed')" id="tabFeedBtn" class="flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-layer-group"></i> Canlı Akış / Post
                     </button>
+                    <button onclick="switchTab('chat')" id="tabChatBtn" class="flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-comments"></i> Özel Sohbet
+                    </button>
                 </div>
 
-                <!-- TAB 1: SOHBET -->
-                <div id="chatTab" class="flex-1 flex flex-col">
-                    <div id="chatHeader" class="p-3 bg-cardBg/80 border-b border-slate-800 text-xs font-bold text-slate-300 hidden">
-                        Sohbet Edilen: <span id="chatTargetName" class="text-orange-400"></span>
-                    </div>
-
-                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col justify-center items-center text-slate-600 text-xs">
-                        Soldan aktif bir kullanıcı seçerek mesajlaşmaya başla.
-                    </div>
-
-                    <form id="chatForm" onsubmit="sendChatMessage(event)" class="p-3 bg-cardBg border-t border-slate-800 hidden flex items-center gap-2">
-                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2" title="Medya Çek">
-                            <i class="fa-solid fa-camera text-base"></i>
-                            <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="sendChatMedia(this)">
-                        </label>
-                        <input type="text" id="chatMsgInput" placeholder="Mesaj yaz..." class="flex-1 bg-darkBg border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
-                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-paper-plane"></i></button>
-                    </form>
-                </div>
-
-                <!-- TAB 2: AKIŞ -->
-                <div id="feedTab" class="flex-1 flex flex-col hidden overflow-y-auto p-4 space-y-4">
+                <!-- TAB 1: AKIŞ (Varsayılan Açılır) -->
+                <div id="feedTab" class="flex-1 flex flex-col overflow-y-auto p-4 space-y-4">
                     <div class="bg-cardBg rounded-2xl p-4 border border-slate-800 space-y-3">
                         <textarea id="postTextInput" rows="2" placeholder="Neler oluyor?..." class="w-full bg-darkBg border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-orange-500 resize-none"></textarea>
                         
@@ -112,6 +92,26 @@
                     </div>
 
                     <div id="postsContainer" class="space-y-3"></div>
+                </div>
+
+                <!-- TAB 2: SOHBET -->
+                <div id="chatTab" class="flex-1 flex flex-col hidden">
+                    <div id="chatHeader" class="p-3 bg-cardBg/80 border-b border-slate-800 text-xs font-bold text-slate-300 hidden">
+                        Sohbet Edilen: <span id="chatTargetName" class="text-orange-400"></span>
+                    </div>
+
+                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col justify-center items-center text-slate-600 text-xs">
+                        Soldan aktif bir kullanıcı seçerek mesajlaşmaya başla.
+                    </div>
+
+                    <form id="chatForm" onsubmit="sendChatMessage(event)" class="p-3 bg-cardBg border-t border-slate-800 hidden flex items-center gap-2">
+                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2" title="Medya Çek">
+                            <i class="fa-solid fa-camera text-base"></i>
+                            <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="sendChatMedia(this)">
+                        </label>
+                        <input type="text" id="chatMsgInput" placeholder="Mesaj yaz..." class="flex-1 bg-darkBg border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
                 </div>
 
             </main>
@@ -140,7 +140,6 @@
         window.onload = () => {
             let saved = localStorage.getItem('wpl_nickname');
             if (!saved) {
-                // Eğer kayıtlı isim yoksa otomatik rastgele havalı bir misafir ismi ata
                 saved = "Misafir_" + Math.floor(1000 + Math.random() * 9000);
                 localStorage.setItem('wpl_nickname', saved);
             }
@@ -211,20 +210,21 @@
         }
 
         function switchTab(tab) {
-            if (tab === 'chat') {
-                document.getElementById('chatTab').classList.remove('hidden');
-                document.getElementById('feedTab').classList.add('hidden');
-                document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
-                document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
-            } else {
-                document.getElementById('chatTab').classList.add('hidden');
+            if (tab === 'feed') {
                 document.getElementById('feedTab').classList.remove('hidden');
+                document.getElementById('chatTab').classList.add('hidden');
                 document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
                 document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
+            } else {
+                document.getElementById('feedTab').classList.add('hidden');
+                document.getElementById('chatTab').classList.remove('hidden');
+                document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
+                document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
             }
         }
 
         function selectChatTarget(targetName) {
+            switchTab('chat'); // Kişiye tıklayınca direkt sohbet sekmesine geçirir
             activeTargetUser = targetName;
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('chatForm').classList.remove('hidden');
@@ -369,5 +369,4 @@
         }
     </script>
 </body>
-    </html>
-    
+</html>
