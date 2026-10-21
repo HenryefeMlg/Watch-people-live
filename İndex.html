@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch People Live</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (Compat sürümleri) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0f19',
+                        cardBg: '#131826',
+                        accentOrange: '#f97316',
+                        accentYellow: '#f59e0b',
+                        accentRed: '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        .live-badge {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen font-sans selection:bg-orange-500 selection:text-white">
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-50 bg-cardBg/80 backdrop-blur-md border-b border-slate-800 px-4 py-3">
+        <div class="max-w-xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="relative w-10 h-10 rounded-full bg-gradient-to-tr from-red-500 via-orange-500 to-yellow-400 p-[2px] shadow-lg shadow-orange-500/20">
+                    <div class="w-full h-full bg-darkBg rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-tower-broadcast text-orange-400 text-sm live-badge"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-orange-400 to-yellow-300 bg-clip-text text-transparent">Watch People Live</h1>
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-[11px] text-emerald-400 font-medium uppercase tracking-wider">Firebase Canlı Akış</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="openPostModal()" class="flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+                <i class="fa-solid fa-plus"></i>
+                <span>Post At</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Feed -->
+    <main class="max-w-xl mx-auto px-4 py-6">
+        <div id="feedContainer" class="space-y-6">
+            <!-- Dinamik Postlar Buraya Gelecek -->
+            <div class="text-center py-12 text-slate-500">
+                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                <p class="text-sm">Yayınlar yükleniyor...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Post Atma Modal -->
+    <div id="postModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg w-full max-w-lg rounded-2xl border border-slate-800 p-6 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <h3 class="font-bold text-lg text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-camera text-orange-400"></i>
+                    <span>Yeni Canlı Paylaşım</span>
+                </h3>
+                <button onclick="closePostModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="postForm" onsubmit="handleCreatePost(event)" class="space-y-4 pt-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Yazar İsmi</label>
+                    <input type="text" id="authorInput" placeholder="Adını yaz..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 transition-colors">
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="anonCheck" onchange="toggleAnonInput()" class="w-4 h-4 rounded border-slate-800 bg-darkBg text-orange-500 focus:ring-orange-500">
+                    <label for="anonCheck" class="text-sm text-slate-300 font-medium cursor-pointer">Anonim olarak paylaş</label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Medya Bağlantıları (Foto/Video URL - Virgülle ayır)</label>
+                    <textarea id="mediaUrlsInput" rows="2" placeholder="https://ornek.com/foto1.jpg, https://ornek.com/video.mp4" class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 transition-colors resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Açıklama / Metin</label>
+                    <textarea id="captionInput" rows="3" placeholder="Neler oluyor?" class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 transition-colors resize-none"></textarea>
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closePostModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl text-sm font-semibold transition-colors">İptal</button>
+                    <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Paylaş</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Entegrasyonu ve Mantık -->
+    <script>
+        // Firebase Yapılandırman
+        const firebaseConfig = {
+          apiKey: "AIzaSyD1AeurYNk8VA1Gm9UGek13PWbFXGAPU1g",
+          authDomain: "watchppllive.firebaseapp.com",
+          projectId: "watchppllive",
+          storageBucket: "watchppllive.firebasestorage.app",
+          messagingSenderId: "1015771032346",
+          appId: "1:1015771032346:web:fb1f156496367f93fb1aa3",
+          measurementId: "G-KWV7387RTV"
+        };
+
+        // Firebase Başlatma
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Modal Kontrolleri
+        function openPostModal() {
+            document.getElementById('postModal').classList.remove('hidden');
+            document.getElementById('postModal').classList.add('flex');
+        }
+        function closePostModal() {
+            document.getElementById('postModal').classList.remove('flex');
+            document.getElementById('postModal').classList.add('hidden');
+            document.getElementById('postForm').reset();
+            document.getElementById('authorInput').disabled = false;
+        }
+        function toggleAnonInput() {
+            const isAnon = document.getElementById('anonCheck').checked;
+            const authorInput = document.getElementById('authorInput');
+            authorInput.disabled = isAnon;
+            if(isAnon) authorInput.value = '';
+        }
+
+        // Firestore'a Post Ekleme
+        function handleCreatePost(e) {
+            e.preventDefault();
+            const isAnon = document.getElementById('anonCheck').checked;
+            const author = isAnon ? 'Anonim' : (document.getElementById('authorInput').value.trim() || 'Misafir');
+            const mediaRaw = document.getElementById('mediaUrlsInput').value.trim();
+            const caption = document.getElementById('captionInput').value.trim();
+
+            const mediaUrls = mediaRaw ? mediaRaw.split(',').map(u => u.trim()).filter(u => u) : [];
+
+            db.collection("posts").add({
+                authorName: author,
+                isAnonymous: isAnon,
+                mediaUrls: mediaUrls,
+                caption: caption,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                closePostModal();
+            }).catch(err => {
+                alert("Post gönderilemedi: " + err.message);
+            });
+        }
+
+        // Firestore'dan Canlı Post Dinleme (Real-time Feed)
+        function initRealtimeFeed() {
+            db.collection("posts").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+                const feedContainer = document.getElementById('feedContainer');
+                if (snapshot.empty) {
+                    feedContainer.innerHTML = `
+                        <div class="text-center py-16 text-slate-500 bg-cardBg rounded-2xl border border-slate-800">
+                            <i class="fa-solid fa-satellite-dish text-3xl mb-3 text-slate-600"></i>
+                            <p class="text-sm font-medium">Henüz canlı akışta kimse yok.</p>
+                            <p class="text-xs text-slate-600 mt-1">İlk postu sen at!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach((doc) => {
+                    const post = { id: doc.id, ...doc.data() };
+                    html += renderPostCard(post);
+                });
+                feedContainer.innerHTML = html;
+                loadCommentsForPosts(snapshot);
+            });
+        }
+
+        function renderPostCard(post) {
+            let mediaHtml = '';
+            if (post.mediaUrls && post.mediaUrls.length > 0) {
+                mediaHtml = `<div class="relative bg-black rounded-xl overflow-hidden mb-3 border border-slate-800/60">`;
+                post.mediaUrls.forEach((url, idx) => {
+                    const isVideo = url.endsWith('.mp4') || url.includes('video');
+                    mediaHtml += `
+                        <div class="media-slide-${post.id} ${idx === 0 ? '' : 'hidden'} flex items-center justify-center bg-black max-h-[400px]">
+                            ${isVideo ? `<video src="${url}" controls class="w-full max-h-[400px] object-contain"></video>` : `<img src="${url}" class="w-full max-h-[400px] object-contain" alt="Medya">`}
+                        </div>
+                    `;
+                });
+                if(post.mediaUrls.length > 1) {
+                    mediaHtml += `
+                        <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-semibold text-white">
+                            1 / ${post.mediaUrls.length}
+                        </div>
+                    `;
+                }
+                mediaHtml += `</div>`;
+            }
+
+            return `
+                <article class="bg-cardBg border border-slate-800 rounded-2xl p-4 shadow-xl">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center font-bold text-white text-sm shadow">
+                                ${post.authorName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-200">${escapeHtml(post.authorName)}</h4>
+                                <span class="text-[11px] text-slate-500">Canlı Akış</span>
+                            </div>
+                        </div>
+                        <span class="text-xs text-orange-400 font-medium bg-orange-500/10 px-2.5 py-1 rounded-full border border-orange-500/20">LIVE</span>
+                    </div>
+
+                    <!-- Media -->
+                    ${mediaHtml}
+
+                    <!-- Caption -->
+                    ${post.caption ? `<p class="text-sm text-slate-300 mb-4 whitespace-pre-wrap">${escapeHtml(post.caption)}</p>` : ''}
+
+                    <!-- Comments Section -->
+                    <div class="border-t border-slate-800/80 pt-3 mt-3 space-y-3">
+                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Yorumlar</h5>
+                        <div id="comments-${post.id}" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            <div class="text-xs text-slate-500">Yorumlar yükleniyor...</div>
+                        </div>
+
+                        <!-- Yorum Ekle Formu -->
+                        <form onsubmit="handleCreateComment(event, '${post.id}')" class="flex flex-col space-y-2 pt-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" id="c-author-${post.id}" placeholder="İsmin..." class="flex-1 bg-darkBg border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                                <label class="flex items-center space-x-1 text-xs text-slate-400 cursor-pointer select-none">
+                                    <input type="checkbox" id="c-anon-${post.id}" onchange="toggleCommentAnon('${post.id}')" class="rounded border-slate-800 bg-darkBg text-orange-500">
+                                    <span>Anonim</span>
+                                </label>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="text" id="c-text-${post.id}" placeholder="Yorum yaz..." required class="flex-1 bg-darkBg border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Gönder</button>
+                            </div>
+                        </form>
+                    </div>
+                </article>
+            `;
+        }
+
+        // Yorumları ve Alt Koleksiyonları Anlık Dinleme
+        function loadCommentsForPosts(snapshot) {
+            snapshot.forEach((docSnap) => {
+                const postId = docSnap.id;
+                db.collection("posts").doc(postId).collection("comments").orderBy("createdAt", "asc")
+                  .onSnapshot((commentSnap) => {
+                      const container = document.getElementById(`comments-${postId}`);
+                      if(!container) return;
+
+                      if(commentSnap.empty) {
+                          container.innerHTML = `<div class="text-[11px] text-slate-600 italic">Henüz yorum yapılmamış. İlk yorumu sen yaz!</div>`;
+                          return;
+                      }
+
+                      let cHtml = '';
+                      commentSnap.forEach((cDoc) => {
+                          const com = cDoc.data();
+                          cHtml += `
+                              <div class="bg-darkBg/60 border border-slate-800/50 rounded-lg p-2 text-xs">
+                                  <div class="flex items-center justify-between mb-1">
+                                      <span class="font-bold text-orange-400">${escapeHtml(com.authorName)}</span>
+                                  </div>
+                                  <p class="text-slate-300">${escapeHtml(com.text)}</p>
+                              </div>
+                          `;
+                      });
+                      container.innerHTML = cHtml;
+                  });
+            });
+        }
+
+        function toggleCommentAnon(postId) {
+            const isAnon = document.getElementById(`c-anon-${postId}`).checked;
+            const authorInput = document.getElementById(`c-author-${postId}`);
+            authorInput.disabled = isAnon;
+            if(isAnon) authorInput.value = '';
+        }
+
+        function handleCreateComment(e, postId) {
+            e.preventDefault();
+            const isAnon = document.getElementById(`c-anon-${postId}`).checked;
+            const author = isAnon ? 'Anonim' : (document.getElementById(`c-author-${postId}`).value.trim() || 'Misafir');
+            const textInput = document.getElementById(`c-text-${postId}`);
+            const text = textInput.value.trim();
+
+            if(!text) return;
+
+            db.collection("posts").doc(postId).collection("comments").add({
+                authorName: author,
+                isAnonymous: isAnon,
+                text: text,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                textInput.value = '';
+            }).catch(err => {
+                alert("Yorum gönderilemedi: " + err.message);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Sayfa açıldığında akışı başlat
+        window.onload = () => {
+            initRealtimeFeed();
+        };
+    </script>
+</body>
+  </html>
+  
