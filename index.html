@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch People Live - HENRY GAMES CR7 OKAPİ KOTA</title>
+    <title>Watch People Live - HENRY GAMES OKAPİ CR7 KOTA Aİ SLOP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -184,12 +184,11 @@
         const db = firebase.firestore();
         const storage = firebase.storage();
 
-        let currentUser = null; // { uid, username, avatarUrl, bannerUrl }
+        let currentUser = null;
         let activeChatUser = null;
         let unsubscribeMessages = null;
         let allUsersCache = [];
 
-        // Sayfa açıldığında localStorage'da açık oturum var mı kontrol et
         window.onload = () => {
             const savedUser = localStorage.getItem('wpl_user');
             if (savedUser) {
@@ -205,7 +204,6 @@
             loadUsersList();
         }
 
-        // Saf İsim ve Şifre ile Kayıt / Giriş
         async function executeAuth(mode) {
             const username = document.getElementById('usernameInput').value.trim().toLowerCase();
             const password = document.getElementById('passwordInput').value.trim();
@@ -213,8 +211,7 @@
             errorDiv.classList.add('hidden');
 
             if (!username || !password) {
-                errorDiv.innerText = "Lütfen kullanıcı adı ve şifre girin.";
-                errorDiv.classList.remove('hidden');
+                alert("Lütfen kullanıcı adı ve şifre girin!");
                 return;
             }
 
@@ -229,7 +226,7 @@
                     const newUser = {
                         uid: username,
                         username: username,
-                        password: password, // Saf saklama
+                        password: password,
                         avatarUrl: 'https://via.placeholder.com/150',
                         bannerUrl: 'https://via.placeholder.com/600x200',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -250,6 +247,7 @@
                 localStorage.setItem('wpl_user', JSON.stringify(currentUser));
                 enterApp();
             } catch (err) {
+                alert(err.message); // Telefonda hatayı direkt pop-up olarak gösterir
                 errorDiv.innerText = err.message;
                 errorDiv.classList.remove('hidden');
             }
@@ -330,7 +328,6 @@
             return user1 < user2 ? `${user1}_${user2}` : `${user2}_${user1}`; 
         }
 
-        // 1 Saat İçinde Silinen Mesaj Filtreleme Mantığı
         function listenMessages() {
             if (unsubscribeMessages) unsubscribeMessages();
             const roomId = getChatRoomId(currentUser.username, activeChatUser.username);
@@ -347,7 +344,7 @@
                         const m = doc.data();
                         const msgTime = m.createdAt ? m.createdAt.toMillis() : now;
                         
-                        if (now - msgTime > ONE_HOUR) return; // 1 saatten eskiyse gösterme
+                        if (now - msgTime > ONE_HOUR) return;
 
                         const isMe = m.senderUsername === currentUser.username;
                         let contentHtml = `<div class="text-sm">${escapeHtml(m.text || '')}</div>`;
@@ -357,4 +354,8 @@
 
                         html += `
                             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                                <div class="max-w-[75%] ${isMe ? 'bg-orange-500 
+                                <div class="max-w-[75%] ${isMe ? 'bg-orange-500 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-slate-800 text-slate-200 rounded-r-2xl rounded-tl-2xl'} px-3 py-2 shadow">
+                                    ${contentHtml}
+                                </div>
+                            </div>
+  
