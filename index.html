@@ -7,6 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Ekrandan Hatayı Görme Catcher'ı -->
+    <script>
+        window.onerror = function(msg, url, line) {
+            alert("HATA: " + msg + " (Satır: " + line + ")");
+        };
+    </script>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -54,7 +61,7 @@
                 <i class="fa-solid fa-bolt"></i> WPL Live
             </span>
             <div class="flex items-center space-x-3">
-                <span id="myDisplayName" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold"></span>
+                <span id="myDisplayName" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold">...</span>
                 <button onclick="changeName()" class="text-xs text-slate-400 hover:text-orange-400" title="İsim Değiştir"><i class="fa-solid fa-pen-to-square"></i></button>
             </div>
         </header>
@@ -111,7 +118,6 @@
                         
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <!-- Doğrudan Kamera ile Çekme Butonu -->
                                 <label class="text-xs text-slate-400 hover:text-orange-400 cursor-pointer flex items-center gap-1.5 bg-darkBg border border-slate-800 px-3 py-1.5 rounded-xl">
                                     <i class="fa-solid fa-camera text-orange-400"></i> Kamera / Medya Çek
                                     <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="previewPostMedia(this)">
@@ -165,14 +171,19 @@
             }
         };
 
-        function saveNickname(e) {
+        async function saveNickname(e) {
             e.preventDefault();
             const input = document.getElementById('nicknameInput').value.trim();
             if (!input) return;
-            myName = input;
-            localStorage.setItem('wpl_nickname', myName);
-            document.getElementById('nameModal').classList.add('hidden');
-            initApp();
+
+            try {
+                myName = input;
+                localStorage.setItem('wpl_nickname', myName);
+                document.getElementById('nameModal').classList.add('hidden');
+                await initApp();
+            } catch (err) {
+                alert("İsim kaydedilirken hata oldu: " + err.message);
+            }
         }
 
         function changeName() {
@@ -180,13 +191,17 @@
             location.reload();
         }
 
-        function initApp() {
+        async function initApp() {
             document.getElementById('myDisplayName').innerText = myName;
             
-            db.collection("active_users").doc(myName).set({
-                name: myName,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            try {
+                await db.collection("active_users").doc(myName).set({
+                    name: myName,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch(e) {
+                console.error("User set error:", e);
+            }
 
             listenUsers();
             listenPosts();
@@ -200,6 +215,8 @@
                     if (u.name !== myName) activeUsersCache.push(u.name);
                 });
                 renderUsers(activeUsersCache);
+            }, (err) => {
+                alert("Kullanıcılar yüklenirken hata: " + err.message);
             });
         }
 
@@ -339,18 +356,22 @@
 
             if (!txt && !postMediaData.url) return;
 
-            await db.collection("posts").add({
-                author: isAnon ? "Anonim" : myName,
-                text: txt,
-                mediaUrl: postMediaData.url,
-                mediaType: postMediaData.type,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            try {
+                await db.collection("posts").add({
+                    author: isAnon ? "Anonim" : myName,
+                    text: txt,
+                    mediaUrl: postMediaData.url,
+                    mediaType: postMediaData.type,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-            document.getElementById('postTextInput').value = '';
-            document.getElementById('postAnonCheck').checked = false;
-            document.getElementById('postMediaPreviewArea').classList.add('hidden');
-            postMediaData = { url: '', type: '' };
+                document.getElementById('postTextInput').value = '';
+                document.getElementById('postAnonCheck').checked = false;
+                document.getElementById('postMediaPreviewArea').classList.add('hidden');
+                postMediaData = { url: '', type: '' };
+            } catch(e) {
+                alert("Post atılamadı: " + e.message);
+            }
         }
 
         function listenPosts() {
@@ -363,17 +384,4 @@
                     if (p.mediaType === 'img') {
                         mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-60 w-full object-cover">`;
                     } else if (p.mediaType === 'video') {
-                        mediaHtml = `<video src="${p.mediaUrl}" controls class="rounded-xl max-h-60 w-full object-cover"></video>`;
-                    }
-
-                    html += `
-                        <div class="bg-cardBg p-4 rounded-2xl border border-slate-800 space-y-2">
-                            <div class="flex items-center justify-between text-xs font-semibold text-orange-400">
-                                <span>${p.author}</span>
-                            </div>
-                            ${p.text ? `<p class="text-xs text-slate-200">${p.text}</p>` : ''}
-                            ${mediaHtml}
-                        </div>
-                    `;
-                });
-    
+                    
