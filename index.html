@@ -46,7 +46,7 @@
                 <p class="text-xs text-slate-400 mt-1">Sohbete başlamak ve paylaşım yapmak için bir isim yaz.</p>
             </div>
             
-            <form onsubmit="saveNickname(event)" class="space-y-3">
+            <form id="nameForm" class="space-y-3">
                 <input type="text" id="nicknameInput" maxlength="20" placeholder="Rumuzun / İsmin..." required class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 text-center font-medium">
                 <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Sohbete Katıl</button>
             </form>
@@ -163,6 +163,12 @@
         let postMediaData = { url: '', type: '' };
 
         window.onload = () => {
+            // Form submit dinleyicisini doğrudan bağla
+            const nameForm = document.getElementById('nameForm');
+            if (nameForm) {
+                nameForm.addEventListener('submit', saveNickname);
+            }
+
             const saved = localStorage.getItem('wpl_nickname');
             if (saved) {
                 myName = saved;
@@ -172,7 +178,7 @@
         };
 
         async function saveNickname(e) {
-            e.preventDefault();
+            if (e) e.preventDefault();
             const input = document.getElementById('nicknameInput').value.trim();
             if (!input) return;
 
@@ -381,7 +387,4 @@
                 snap.forEach(doc => {
                     const p = doc.data();
                     let mediaHtml = '';
-                    if (p.mediaType === 'img') {
-                        mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-60 w-full object-cover">`;
-                    } else if (p.mediaType === 'video') {
-                    
+                  
