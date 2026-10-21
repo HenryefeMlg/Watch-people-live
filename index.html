@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch People Live - HENRY GAMES OKAPİ CR7 KOTA Aİ SLOP</title>
+    <title>Watch People Live - Hızlı Sohbet & Akış</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK (Firestore ve Storage) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -29,143 +28,112 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col">
 
-    <!-- Auth Ekranı (Sadece İsim ve Şifre) -->
-    <div id="authScreen" class="fixed inset-0 z-50 bg-darkBg flex items-center justify-center p-4">
-        <div class="bg-cardBg w-full max-w-md rounded-2xl border border-slate-800 p-6 shadow-2xl space-y-6">
-            <div class="text-center">
-                <h2 class="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">Watch People Live</h2>
-                <p class="text-xs text-slate-400 mt-1">Saf kullanıcı adı ve şifre ile giriş yap</p>
+    <!-- 1. İLK GİRİŞ: "AD KOY PLS" MODALI -->
+    <div id="nameModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-cardBg w-full max-w-sm rounded-2xl border border-slate-800 p-6 shadow-2xl space-y-4 text-center">
+            <div class="w-12 h-12 bg-orange-500/10 text-orange-400 rounded-full flex items-center justify-center mx-auto text-xl border border-orange-500/20">
+                <i class="fa-solid fa-user-tag"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-white">Adını Koy Pls</h2>
+                <p class="text-xs text-slate-400 mt-1">Sohbete başlamak ve paylaşım yapmak için bir isim yaz.</p>
             </div>
             
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Kullanıcı Adı</label>
-                    <input type="text" id="usernameInput" required placeholder="ornek_kullanici" class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Şifre</label>
-                    <input type="password" id="passwordInput" required placeholder="••••••••" class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500">
-                </div>
-                
-                <div id="authError" class="text-xs text-red-400 hidden text-center p-2 bg-red-500/10 rounded-lg border border-red-500/20"></div>
-                
-                <div class="flex space-x-3 pt-2">
-                    <button type="button" onclick="executeAuth('login')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-sm font-semibold transition-colors">Giriş Yap</button>
-                    <button type="button" onclick="executeAuth('register')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Kayıt Ol</button>
-                </div>
-            </div>
+            <form onsubmit="saveNickname(event)" class="space-y-3">
+                <input type="text" id="nicknameInput" maxlength="20" placeholder="Rumuzun / İsmin..." required class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 text-center font-medium">
+                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Sohbete Katıl</button>
+            </form>
         </div>
     </div>
 
-    <!-- Ana Uygulama -->
-    <div id="appScreen" class="hidden flex-1 flex flex-col max-w-4xl w-full mx-auto">
+    <!-- ANA UYGULAMA EKRANI -->
+    <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto">
+        <!-- Header -->
         <header class="bg-cardBg border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-            <span class="font-bold text-orange-400 text-lg">WPL Chat (1 Saat Ömürlü)</span>
-            <div class="flex items-center space-x-4">
-                <button onclick="openProfileModal()" class="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors">
-                    <img id="navAvatar" src="https://via.placeholder.com/150" class="w-6 h-6 rounded-full object-cover">
-                    <span id="navUsername" class="text-slate-200">...</span>
-                </button>
-                <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400 text-sm"><i class="fa-solid fa-right-from-bracket"></i></button>
+            <span class="font-bold text-orange-400 text-lg flex items-center gap-2">
+                <i class="fa-solid fa-bolt"></i> WPL Live
+            </span>
+            <div class="flex items-center space-x-3">
+                <span id="myDisplayName" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold"></span>
+                <button onclick="changeName()" class="text-xs text-slate-400 hover:text-orange-400" title="İsim Değiştir"><i class="fa-solid fa-pen-to-square"></i></button>
             </div>
         </header>
 
+        <!-- İçerik Alanı -->
         <div class="flex-1 flex overflow-hidden">
-            <!-- Sol: Kullanıcı Listesi ve Arama -->
-            <aside class="w-1/3 border-r border-slate-800 bg-cardBg/50 flex flex-col">
+            
+            <!-- SOL: Aktif Kişiler & Arama -->
+            <aside class="w-1/3 border-r border-slate-800 bg-cardBg/30 flex flex-col">
                 <div class="p-3 border-b border-slate-800">
-                    <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Kişi ara..." class="w-full bg-darkBg border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                    <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Kişi ara..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
                 </div>
-                <div id="usersList" class="flex-1 overflow-y-auto divide-y divide-slate-800/50"></div>
+                <div class="p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aktif İsimler</div>
+                <div id="usersList" class="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-2 text-sm"></div>
             </aside>
 
-            <!-- Sağ: Sohbet Ekranı -->
+            <!-- SAĞ ORTA: Sohbet / Post Tab Geçişi -->
             <main class="flex-1 flex flex-col bg-darkBg">
-                <div id="chatHeader" class="p-3 bg-cardBg border-b border-slate-800 hidden flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <img id="chatUserAvatar" src="" class="w-8 h-8 rounded-full object-cover">
-                        <span id="chatUserName" class="font-bold text-sm text-slate-200"></span>
-                    </div>
-                    <button onclick="startVoiceCall()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors">
-                        <i class="fa-solid fa-phone"></i>
-                        <span>Sesli Ara</span>
+                <!-- Tab Butonları -->
+                <div class="flex border-b border-slate-800 bg-cardBg/60">
+                    <button onclick="switchTab('chat')" id="tabChatBtn" class="flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-comments"></i> Özel Sohbet
+                    </button>
+                    <button onclick="switchTab('feed')" id="tabFeedBtn" class="flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-layer-group"></i> Canlı Akış / Post
                     </button>
                 </div>
 
-                <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3">
-                    <div class="h-full flex flex-col items-center justify-center text-slate-600 text-sm">
-                        <i class="fa-regular fa-comments text-4xl mb-2"></i>
-                        <p>Sohbet seç. (Mesajlar 1 saat sonra otomatik kaybolur)</p>
+                <!-- TAB 1: SOHBET EKRANI -->
+                <div id="chatTab" class="flex-1 flex flex-col">
+                    <div id="chatHeader" class="p-3 bg-cardBg/80 border-b border-slate-800 text-xs font-bold text-slate-300 hidden">
+                        Sohbet Edilen: <span id="chatTargetName" class="text-orange-400"></span>
                     </div>
+
+                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col justify-center items-center text-slate-600 text-xs">
+                        Soldan bir kullanıcı seçerek mesajlaşmaya başla.
+                    </div>
+
+                    <form id="chatForm" onsubmit="sendChatMessage(event)" class="p-3 bg-cardBg border-t border-slate-800 hidden flex items-center gap-2">
+                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2" title="Kameradan Çek veya Dosya Seç">
+                            <i class="fa-solid fa-camera text-base"></i>
+                            <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="sendChatMedia(this)">
+                        </label>
+                        <input type="text" id="chatMsgInput" placeholder="Mesaj yaz..." class="flex-1 bg-darkBg border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-paper-plane"></i></button>
+                    </form>
                 </div>
 
-                <!-- Mesaj ve Çizim Gönderme Alanı -->
-                <form id="chatForm" onsubmit="handleSendMessage(event)" class="p-3 bg-cardBg border-t border-slate-800 hidden flex items-center space-x-2">
-                    <button type="button" onclick="openDrawingModal()" class="text-slate-400 hover:text-orange-400 p-2 text-lg transition-colors" title="Çizim Gönder">
-                        <i class="fa-solid fa-paintbrush"></i>
-                    </button>
-                    <input type="text" id="messageInput" placeholder="Mesajını yaz (1 saat ömürlü)..." class="flex-1 bg-darkBg border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-orange-500">
-                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </form>
+                <!-- TAB 2: POST / AKIŞ EKRANI -->
+                <div id="feedTab" class="flex-1 flex flex-col hidden overflow-y-auto p-4 space-y-4">
+                    <!-- Post Paylaşma Alanı -->
+                    <div class="bg-cardBg rounded-2xl p-4 border border-slate-800 space-y-3">
+                        <textarea id="postTextInput" rows="2" placeholder="Neler oluyor?..." class="w-full bg-darkBg border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-orange-500 resize-none"></textarea>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <!-- Doğrudan Kamera ile Çekme Butonu -->
+                                <label class="text-xs text-slate-400 hover:text-orange-400 cursor-pointer flex items-center gap-1.5 bg-darkBg border border-slate-800 px-3 py-1.5 rounded-xl">
+                                    <i class="fa-solid fa-camera text-orange-400"></i> Kamera / Medya Çek
+                                    <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="previewPostMedia(this)">
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
+                                    <input type="checkbox" id="postAnonCheck" class="rounded bg-darkBg border-slate-800 text-orange-500 focus:ring-0">
+                                    Anonim
+                                </label>
+                            </div>
+                            <button onclick="submitPost()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-xl text-xs font-semibold">Paylaş</button>
+                        </div>
+                        <div id="postMediaPreviewArea" class="hidden relative w-full h-32 rounded-lg overflow-hidden border border-slate-700 bg-black flex items-center justify-center">
+                            <img id="postImgPreview" src="" class="w-full h-full object-cover hidden">
+                            <video id="postVideoPreview" src="" controls class="w-full h-full object-cover hidden"></video>
+                        </div>
+                    </div>
+
+                    <!-- Post Akışı -->
+                    <div id="postsContainer" class="space-y-3"></div>
+                </div>
+
             </main>
-        </div>
-    </div>
-
-    <!-- Hızlı Çizim Modalı -->
-    <div id="drawingModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-cardBg w-full max-w-md rounded-2xl border border-slate-800 p-4 shadow-2xl space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-paintbrush text-orange-400 mr-2"></i>Hızlı Çizim Gönder</h3>
-                <button onclick="closeDrawingModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="bg-white rounded-xl overflow-hidden cursor-crosshair flex justify-center">
-                <canvas id="paintCanvas" width="320" height="240" class="touch-none"></canvas>
-            </div>
-            <div class="flex justify-between items-center pt-1">
-                <button type="button" onclick="clearCanvas()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-semibold">Temizle</button>
-                <button type="button" onclick="sendDrawing()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold">Çizimi Gönder</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sesli Arama Modalı -->
-    <div id="callModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-4 space-y-6">
-        <div class="relative w-28 h-28 rounded-full border-4 border-emerald-500 overflow-hidden shadow-2xl animate-pulse">
-            <img id="callUserAvatar" src="" class="w-full h-full object-cover">
-        </div>
-        <div class="text-center">
-            <h3 id="callUserName" class="text-xl font-bold text-white">Arama yapılıyor...</h3>
-            <p id="callStatusText" class="text-xs text-emerald-400 mt-1">Sesli bağlantı kuruluyor</p>
-        </div>
-        <button onclick="endVoiceCall()" class="bg-red-500 hover:bg-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-xl shadow-lg transition-transform active:scale-95">
-            <i class="fa-solid fa-phone-slash"></i>
-        </button>
-    </div>
-
-    <!-- Profil Modalı -->
-    <div id="profileModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-cardBg w-full max-w-md rounded-2xl border border-slate-800 overflow-hidden shadow-2xl relative">
-            <div id="modalBannerPreview" class="h-28 bg-slate-800 bg-cover bg-center relative">
-                <label class="absolute right-2 bottom-2 bg-black/60 p-1.5 rounded-lg text-xs text-white cursor-pointer">
-                    <i class="fa-solid fa-camera"></i> Banner Değiştir
-                    <input type="file" id="bannerFileInput" accept="image/*" class="hidden" onchange="uploadProfileImage('banner', this)">
-                </label>
-            </div>
-            <div class="px-6 relative -mt-10 mb-4 flex justify-between items-end">
-                <div class="relative w-20 h-20 rounded-full border-4 border-cardBg bg-slate-700 overflow-hidden group">
-                    <img id="modalAvatarPreview" src="https://via.placeholder.com/150" class="w-full h-full object-cover">
-                    <label class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs cursor-pointer transition-opacity">
-                        <i class="fa-solid fa-camera"></i>
-                        <input type="file" id="avatarFileInput" accept="image/*" class="hidden" onchange="uploadProfileImage('avatar', this)">
-                    </label>
-                </div>
-                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white pb-2"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="px-6 pb-6 space-y-4">
-                <input type="text" id="profileUsernameDisplay" disabled class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-500 cursor-not-allowed">
-            </div>
         </div>
     </div>
 
@@ -182,180 +150,230 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        let currentUser = null;
-        let activeChatUser = null;
-        let unsubscribeMessages = null;
-        let allUsersCache = [];
+        let myName = '';
+        let activeTargetUser = null;
+        let activeUsersCache = [];
+        let postMediaData = { url: '', type: '' };
 
         window.onload = () => {
-            const savedUser = localStorage.getItem('wpl_user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                enterApp();
+            const saved = localStorage.getItem('wpl_nickname');
+            if (saved) {
+                myName = saved;
+                document.getElementById('nameModal').classList.add('hidden');
+                initApp();
             }
         };
 
-        function enterApp() {
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('appScreen').classList.remove('hidden');
-            updateUserUI();
-            loadUsersList();
+        function saveNickname(e) {
+            e.preventDefault();
+            const input = document.getElementById('nicknameInput').value.trim();
+            if (!input) return;
+            myName = input;
+            localStorage.setItem('wpl_nickname', myName);
+            document.getElementById('nameModal').classList.add('hidden');
+            initApp();
         }
 
-        async function executeAuth(mode) {
-            const username = document.getElementById('usernameInput').value.trim().toLowerCase();
-            const password = document.getElementById('passwordInput').value.trim();
-            const errorDiv = document.getElementById('authError');
-            errorDiv.classList.add('hidden');
-
-            if (!username || !password) {
-                alert("Lütfen kullanıcı adı ve şifre girin!");
-                return;
-            }
-
-            try {
-                const userRef = db.collection("users").doc(username);
-                const docSnap = await userRef.get();
-
-                if (mode === 'register') {
-                    if (docSnap.exists) {
-                        throw new Error("Bu kullanıcı adı zaten alınmış!");
-                    }
-                    const newUser = {
-                        uid: username,
-                        username: username,
-                        password: password,
-                        avatarUrl: 'https://via.placeholder.com/150',
-                        bannerUrl: 'https://via.placeholder.com/600x200',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    };
-                    await userRef.set(newUser);
-                    currentUser = newUser;
-                } else {
-                    if (!docSnap.exists) {
-                        throw new Error("Böyle bir kullanıcı bulunamadı!");
-                    }
-                    const userData = docSnap.data();
-                    if (userData.password !== password) {
-                        throw new Error("Şifre hatalı!");
-                    }
-                    currentUser = userData;
-                }
-
-                localStorage.setItem('wpl_user', JSON.stringify(currentUser));
-                enterApp();
-            } catch (err) {
-                alert(err.message); // Telefonda hatayı direkt pop-up olarak gösterir
-                errorDiv.innerText = err.message;
-                errorDiv.classList.remove('hidden');
-            }
+        function changeName() {
+            localStorage.removeItem('wpl_nickname');
+            location.reload();
         }
 
-        function handleLogout() {
-            localStorage.removeItem('wpl_user');
-            currentUser = null;
-            document.getElementById('appScreen').classList.add('hidden');
-            document.getElementById('authScreen').classList.remove('hidden');
-        }
-
-        function updateUserUI() {
-            if (!currentUser) return;
-            document.getElementById('navUsername').innerText = currentUser.username;
-            document.getElementById('navAvatar').src = currentUser.avatarUrl;
-            document.getElementById('profileUsernameDisplay').value = currentUser.username;
-            document.getElementById('modalAvatarPreview').src = currentUser.avatarUrl;
-            document.getElementById('modalBannerPreview').style.backgroundImage = `url('${currentUser.bannerUrl}')`;
-        }
-
-        async function uploadProfileImage(type, input) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const storageRef = storage.ref(`profiles/${currentUser.username}_${type}`);
-            const snapshot = await storageRef.put(file);
-            const url = await snapshot.ref.getDownloadURL();
+        function initApp() {
+            document.getElementById('myDisplayName').innerText = myName;
             
-            const updateObj = type === 'avatar' ? { avatarUrl: url } : { bannerUrl: url };
-            await db.collection("users").doc(currentUser.username).update(updateObj);
-            
-            currentUser = { ...currentUser, ...updateObj };
-            localStorage.setItem('wpl_user', JSON.stringify(currentUser));
-            updateUserUI();
+            db.collection("active_users").doc(myName).set({
+                name: myName,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            listenUsers();
+            listenPosts();
         }
 
-        function loadUsersList() {
-            db.collection("users").onSnapshot((snapshot) => {
-                allUsersCache = [];
-                snapshot.forEach((doc) => {
+        function listenUsers() {
+            db.collection("active_users").onSnapshot((snap) => {
+                activeUsersCache = [];
+                snap.forEach(doc => {
                     const u = doc.data();
-                    if (u.username !== currentUser.username) allUsersCache.push(u);
+                    if (u.name !== myName) activeUsersCache.push(u.name);
                 });
-                renderUsers(allUsersCache);
+                renderUsers(activeUsersCache);
             });
         }
 
-        function renderUsers(users) {
-            const usersList = document.getElementById('usersList');
+        function renderUsers(list) {
+            const container = document.getElementById('usersList');
             let html = '';
-            users.forEach(u => {
+            list.forEach(u => {
                 html += `
-                    <div onclick="selectUserForChat('${u.username}', '${u.avatarUrl}')" class="p-3 flex items-center space-x-3 hover:bg-slate-800/60 cursor-pointer transition-colors">
-                        <img src="${u.avatarUrl}" class="w-9 h-9 rounded-full object-cover">
-                        <span class="text-sm font-semibold text-slate-200">${u.username}</span>
+                    <div onclick="selectChatTarget('${u}')" class="p-2.5 hover:bg-slate-800/60 cursor-pointer rounded-xl flex items-center justify-between transition-colors">
+                        <span class="font-medium text-slate-200">${u}</span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
                     </div>
                 `;
             });
-            usersList.innerHTML = html || `<div class="p-4 text-xs text-slate-500 text-center">Kullanıcı bulunamadı.</div>`;
+            container.innerHTML = html || `<div class="text-xs text-slate-600 p-2">Kimse yok.</div>`;
         }
 
         function filterUsers() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allUsersCache.filter(u => u.username.includes(query));
-            renderUsers(filtered);
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            renderUsers(activeUsersCache.filter(u => u.toLowerCase().includes(q)));
         }
 
-        function selectUserForChat(username, avatarUrl) {
-            activeChatUser = { username, avatarUrl };
+        function switchTab(tab) {
+            if (tab === 'chat') {
+                document.getElementById('chatTab').classList.remove('hidden');
+                document.getElementById('feedTab').classList.add('hidden');
+                document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
+                document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
+            } else {
+                document.getElementById('chatTab').classList.add('hidden');
+                document.getElementById('feedTab').classList.remove('hidden');
+                document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
+                document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
+            }
+        }
+
+        function selectChatTarget(targetName) {
+            activeTargetUser = targetName;
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('chatForm').classList.remove('hidden');
-            document.getElementById('chatUserName').innerText = username;
-            document.getElementById('chatUserAvatar').src = avatarUrl;
+            document.getElementById('chatTargetName').innerText = targetName;
             listenMessages();
         }
 
-        function getChatRoomId(user1, user2) { 
-            return user1 < user2 ? `${user1}_${user2}` : `${user2}_${user1}`; 
-        }
+        function getRoomId(u1, u2) { return u1 < u2 ? `${u1}_${u2}` : `${u2}_${u1}`; }
 
         function listenMessages() {
-            if (unsubscribeMessages) unsubscribeMessages();
-            const roomId = getChatRoomId(currentUser.username, activeChatUser.username);
-            
-            unsubscribeMessages = db.collection("chats").doc(roomId).collection("messages")
+            const roomId = getRoomId(myName, activeTargetUser);
+            db.collection("chats").doc(roomId).collection("messages")
                 .orderBy("createdAt", "asc")
-                .onSnapshot((snapshot) => {
-                    const messagesContainer = document.getElementById('chatMessages');
+                .onSnapshot((snap) => {
+                    const box = document.getElementById('chatMessages');
                     let html = '';
-                    const now = Date.now();
-                    const ONE_HOUR = 60 * 60 * 1000;
-
-                    snapshot.forEach((doc) => {
+                    snap.forEach(doc => {
                         const m = doc.data();
-                        const msgTime = m.createdAt ? m.createdAt.toMillis() : now;
-                        
-                        if (now - msgTime > ONE_HOUR) return;
-
-                        const isMe = m.senderUsername === currentUser.username;
-                        let contentHtml = `<div class="text-sm">${escapeHtml(m.text || '')}</div>`;
-                        if (m.type === 'drawing') {
-                            contentHtml = `<img src="${m.imageUrl}" class="rounded-lg max-w-[200px] border border-slate-700">`;
-                        }
+                        const isMe = m.sender === myName;
+                        let content = `<p>${m.text || ''}</p>`;
+                        if (m.type === 'img') content = `<img src="${m.url}" class="rounded-lg max-w-[180px]">`;
+                        if (m.type === 'video') content = `<video src="${m.url}" controls class="rounded-lg max-w-[180px]"></video>`;
 
                         html += `
-                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                                <div class="max-w-[75%] ${isMe ? 'bg-orange-500 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-slate-800 text-slate-200 rounded-r-2xl rounded-tl-2xl'} px-3 py-2 shadow">
-                                    ${contentHtml}
+                            <div class="w-full flex flex-col ${isMe ? 'items-end' : 'items-start'} my-1">
+                                <div class="${isMe ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-200'} px-3 py-2 rounded-2xl max-w-[80%] text-xs shadow">
+                                    ${content}
                                 </div>
                             </div>
-  
+                        `;
+                    });
+                    box.className = "flex-1 p-4 overflow-y-auto space-y-2 flex flex-col";
+                    box.innerHTML = html || `<div class="text-xs text-slate-600 text-center my-auto">Sohbeti başlat...</div>`;
+                    box.scrollTop = box.scrollHeight;
+                });
+        }
+
+        async function sendChatMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatMsgInput');
+            const txt = input.value.trim();
+            if (!txt || !activeTargetUser) return;
+            input.value = '';
+
+            const roomId = getRoomId(myName, activeTargetUser);
+            await db.collection("chats").doc(roomId).collection("messages").add({
+                sender: myName,
+                text: txt,
+                type: 'text',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        function sendChatMedia(input) {
+            if (!input.files || !input.files[0] || !activeTargetUser) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const roomId = getRoomId(myName, activeTargetUser);
+                const isVideo = file.type.startsWith('video');
+                await db.collection("chats").doc(roomId).collection("messages").add({
+                    sender: myName,
+                    url: e.target.result,
+                    type: isVideo ? 'video' : 'img',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function previewPostMedia(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                postMediaData.url = e.target.result;
+                postMediaData.type = file.type.startsWith('video') ? 'video' : 'img';
+                
+                const previewArea = document.getElementById('postMediaPreviewArea');
+                const imgPrev = document.getElementById('postImgPreview');
+                const vidPrev = document.getElementById('postVideoPreview');
+                
+                previewArea.classList.remove('hidden');
+                if (postMediaData.type === 'video') {
+                    vidPrev.src = postMediaData.url;
+                    vidPrev.classList.remove('hidden');
+                    imgPrev.classList.add('hidden');
+                } else {
+                    imgPrev.src = postMediaData.url;
+                    imgPrev.classList.remove('hidden');
+                    vidPrev.classList.add('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitPost() {
+            const txt = document.getElementById('postTextInput').value.trim();
+            const isAnon = document.getElementById('postAnonCheck').checked;
+
+            if (!txt && !postMediaData.url) return;
+
+            await db.collection("posts").add({
+                author: isAnon ? "Anonim" : myName,
+                text: txt,
+                mediaUrl: postMediaData.url,
+                mediaType: postMediaData.type,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            document.getElementById('postTextInput').value = '';
+            document.getElementById('postAnonCheck').checked = false;
+            document.getElementById('postMediaPreviewArea').classList.add('hidden');
+            postMediaData = { url: '', type: '' };
+        }
+
+        function listenPosts() {
+            db.collection("posts").orderBy("createdAt", "desc").onSnapshot((snap) => {
+                const container = document.getElementById('postsContainer');
+                let html = '';
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    let mediaHtml = '';
+                    if (p.mediaType === 'img') {
+                        mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-60 w-full object-cover">`;
+                    } else if (p.mediaType === 'video') {
+                        mediaHtml = `<video src="${p.mediaUrl}" controls class="rounded-xl max-h-60 w-full object-cover"></video>`;
+                    }
+
+                    html += `
+                        <div class="bg-cardBg p-4 rounded-2xl border border-slate-800 space-y-2">
+                            <div class="flex items-center justify-between text-xs font-semibold text-orange-400">
+                                <span>${p.author}</span>
+                            </div>
+                            ${p.text ? `<p class="text-xs text-slate-200">${p.text}</p>` : ''}
+                            ${mediaHtml}
+                        </div>
+                    `;
+                });
+    
