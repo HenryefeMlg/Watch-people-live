@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch People Live - Canlı Sohbet & Çizim</title>
+    <title>Watch People Live - HENRY GAMES CR7 OKAPİ KOTA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK (Compat) -->
+    <!-- Firebase SDK (Firestore ve Storage) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
@@ -30,14 +29,15 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col">
 
-    <!-- Auth Ekranı -->
+    <!-- Auth Ekranı (Sadece İsim ve Şifre) -->
     <div id="authScreen" class="fixed inset-0 z-50 bg-darkBg flex items-center justify-center p-4">
         <div class="bg-cardBg w-full max-w-md rounded-2xl border border-slate-800 p-6 shadow-2xl space-y-6">
             <div class="text-center">
                 <h2 class="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">Watch People Live</h2>
-                <p class="text-xs text-slate-400 mt-1">1 saat içinde silinen mesajlar & çizim özellikli sohbet</p>
+                <p class="text-xs text-slate-400 mt-1">Saf kullanıcı adı ve şifre ile giriş yap</p>
             </div>
-            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+            
+            <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Kullanıcı Adı</label>
                     <input type="text" id="usernameInput" required placeholder="ornek_kullanici" class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500">
@@ -46,12 +46,14 @@
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Şifre</label>
                     <input type="password" id="passwordInput" required placeholder="••••••••" class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500">
                 </div>
-                <div id="authError" class="text-xs text-red-400 hidden text-center"></div>
+                
+                <div id="authError" class="text-xs text-red-400 hidden text-center p-2 bg-red-500/10 rounded-lg border border-red-500/20"></div>
+                
                 <div class="flex space-x-3 pt-2">
-                    <button type="submit" onclick="authMode='login'" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-sm font-semibold transition-colors">Giriş Yap</button>
-                    <button type="submit" onclick="authMode='register'" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Kayıt Ol</button>
+                    <button type="button" onclick="executeAuth('login')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-sm font-semibold transition-colors">Giriş Yap</button>
+                    <button type="button" onclick="executeAuth('register')" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Kayıt Ol</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -84,7 +86,6 @@
                         <img id="chatUserAvatar" src="" class="w-8 h-8 rounded-full object-cover">
                         <span id="chatUserName" class="font-bold text-sm text-slate-200"></span>
                     </div>
-                    <!-- Sesli Arama ve Özellikler -->
                     <button onclick="startVoiceCall()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors">
                         <i class="fa-solid fa-phone"></i>
                         <span>Sesli Ara</span>
@@ -129,7 +130,7 @@
         </div>
     </div>
 
-    <!-- Sesli Arama / Arama Modalı -->
+    <!-- Sesli Arama Modalı -->
     <div id="callModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex-col items-center justify-center p-4 space-y-6">
         <div class="relative w-28 h-28 rounded-full border-4 border-emerald-500 overflow-hidden shadow-2xl animate-pulse">
             <img id="callUserAvatar" src="" class="w-full h-full object-cover">
@@ -180,77 +181,108 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
 
-        let currentUser = null;
-        let currentUserData = null;
+        let currentUser = null; // { uid, username, avatarUrl, bannerUrl }
         let activeChatUser = null;
-        let authMode = 'login';
         let unsubscribeMessages = null;
         let allUsersCache = [];
 
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                const userDoc = await db.collection("users").doc(user.uid).get();
-                currentUserData = userDoc.data();
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('appScreen').classList.remove('hidden');
-                updateUserUI();
-                loadUsersList();
-            } else {
-                document.getElementById('authScreen').classList.remove('hidden');
-                document.getElementById('appScreen').classList.add('hidden');
+        // Sayfa açıldığında localStorage'da açık oturum var mı kontrol et
+        window.onload = () => {
+            const savedUser = localStorage.getItem('wpl_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                enterApp();
             }
-        });
+        };
 
-        async function handleAuth(e) {
-            e.preventDefault();
+        function enterApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            updateUserUI();
+            loadUsersList();
+        }
+
+        // Saf İsim ve Şifre ile Kayıt / Giriş
+        async function executeAuth(mode) {
             const username = document.getElementById('usernameInput').value.trim().toLowerCase();
             const password = document.getElementById('passwordInput').value.trim();
             const errorDiv = document.getElementById('authError');
             errorDiv.classList.add('hidden');
-            const fakeEmail = `${username}@wpl.local`;
+
+            if (!username || !password) {
+                errorDiv.innerText = "Lütfen kullanıcı adı ve şifre girin.";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
 
             try {
-                if (authMode === 'register') {
-                    const checkUser = await db.collection("users").where("username", "==", username).get();
-                    if (!checkUser.empty) throw new Error("Bu kullanıcı adı alınmış!");
-                    const res = await auth.createUserWithEmailAndPassword(fakeEmail, password);
-                    await db.collection("users").doc(res.user.uid).set({
-                        uid: res.user.uid, username, avatarUrl: 'https://via.placeholder.com/150', bannerUrl: 'https://via.placeholder.com/600x200'
-                    });
+                const userRef = db.collection("users").doc(username);
+                const docSnap = await userRef.get();
+
+                if (mode === 'register') {
+                    if (docSnap.exists) {
+                        throw new Error("Bu kullanıcı adı zaten alınmış!");
+                    }
+                    const newUser = {
+                        uid: username,
+                        username: username,
+                        password: password, // Saf saklama
+                        avatarUrl: 'https://via.placeholder.com/150',
+                        bannerUrl: 'https://via.placeholder.com/600x200',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    await userRef.set(newUser);
+                    currentUser = newUser;
                 } else {
-                    await auth.signInWithEmailAndPassword(fakeEmail, password);
+                    if (!docSnap.exists) {
+                        throw new Error("Böyle bir kullanıcı bulunamadı!");
+                    }
+                    const userData = docSnap.data();
+                    if (userData.password !== password) {
+                        throw new Error("Şifre hatalı!");
+                    }
+                    currentUser = userData;
                 }
+
+                localStorage.setItem('wpl_user', JSON.stringify(currentUser));
+                enterApp();
             } catch (err) {
                 errorDiv.innerText = err.message;
                 errorDiv.classList.remove('hidden');
             }
         }
 
-        function handleLogout() { auth.signOut(); }
+        function handleLogout() {
+            localStorage.removeItem('wpl_user');
+            currentUser = null;
+            document.getElementById('appScreen').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+        }
 
         function updateUserUI() {
-            if (!currentUserData) return;
-            document.getElementById('navUsername').innerText = currentUserData.username;
-            document.getElementById('navAvatar').src = currentUserData.avatarUrl;
-            document.getElementById('profileUsernameDisplay').value = currentUserData.username;
-            document.getElementById('modalAvatarPreview').src = currentUserData.avatarUrl;
-            document.getElementById('modalBannerPreview').style.backgroundImage = `url('${currentUserData.bannerUrl}')`;
+            if (!currentUser) return;
+            document.getElementById('navUsername').innerText = currentUser.username;
+            document.getElementById('navAvatar').src = currentUser.avatarUrl;
+            document.getElementById('profileUsernameDisplay').value = currentUser.username;
+            document.getElementById('modalAvatarPreview').src = currentUser.avatarUrl;
+            document.getElementById('modalBannerPreview').style.backgroundImage = `url('${currentUser.bannerUrl}')`;
         }
 
         async function uploadProfileImage(type, input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
-            const storageRef = storage.ref(`profiles/${currentUser.uid}_${type}`);
+            const storageRef = storage.ref(`profiles/${currentUser.username}_${type}`);
             const snapshot = await storageRef.put(file);
             const url = await snapshot.ref.getDownloadURL();
+            
             const updateObj = type === 'avatar' ? { avatarUrl: url } : { bannerUrl: url };
-            await db.collection("users").doc(currentUser.uid).update(updateObj);
-            currentUserData = { ...currentUserData, ...updateObj };
+            await db.collection("users").doc(currentUser.username).update(updateObj);
+            
+            currentUser = { ...currentUser, ...updateObj };
+            localStorage.setItem('wpl_user', JSON.stringify(currentUser));
             updateUserUI();
         }
 
@@ -259,7 +291,7 @@
                 allUsersCache = [];
                 snapshot.forEach((doc) => {
                     const u = doc.data();
-                    if (u.uid !== currentUser.uid) allUsersCache.push(u);
+                    if (u.username !== currentUser.username) allUsersCache.push(u);
                 });
                 renderUsers(allUsersCache);
             });
@@ -270,7 +302,7 @@
             let html = '';
             users.forEach(u => {
                 html += `
-                    <div onclick="selectUserForChat('${u.uid}', '${u.username}', '${u.avatarUrl}')" class="p-3 flex items-center space-x-3 hover:bg-slate-800/60 cursor-pointer transition-colors">
+                    <div onclick="selectUserForChat('${u.username}', '${u.avatarUrl}')" class="p-3 flex items-center space-x-3 hover:bg-slate-800/60 cursor-pointer transition-colors">
                         <img src="${u.avatarUrl}" class="w-9 h-9 rounded-full object-cover">
                         <span class="text-sm font-semibold text-slate-200">${u.username}</span>
                     </div>
@@ -285,8 +317,8 @@
             renderUsers(filtered);
         }
 
-        function selectUserForChat(uid, username, avatarUrl) {
-            activeChatUser = { uid, username, avatarUrl };
+        function selectUserForChat(username, avatarUrl) {
+            activeChatUser = { username, avatarUrl };
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('chatForm').classList.remove('hidden');
             document.getElementById('chatUserName').innerText = username;
@@ -294,12 +326,14 @@
             listenMessages();
         }
 
-        function getChatRoomId(uid1, uid2) { return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`; }
+        function getChatRoomId(user1, user2) { 
+            return user1 < user2 ? `${user1}_${user2}` : `${user2}_${user1}`; 
+        }
 
         // 1 Saat İçinde Silinen Mesaj Filtreleme Mantığı
         function listenMessages() {
             if (unsubscribeMessages) unsubscribeMessages();
-            const roomId = getChatRoomId(currentUser.uid, activeChatUser.uid);
+            const roomId = getChatRoomId(currentUser.username, activeChatUser.username);
             
             unsubscribeMessages = db.collection("chats").doc(roomId).collection("messages")
                 .orderBy("createdAt", "asc")
@@ -313,10 +347,9 @@
                         const m = doc.data();
                         const msgTime = m.createdAt ? m.createdAt.toMillis() : now;
                         
-                        // 1 saat geçmişse mesajı ekrana basma (görmezden gel)
-                        if (now - msgTime > ONE_HOUR) return;
+                        if (now - msgTime > ONE_HOUR) return; // 1 saatten eskiyse gösterme
 
-                        const isMe = m.senderUid === currentUser.uid;
+                        const isMe = m.senderUsername === currentUser.username;
                         let contentHtml = `<div class="text-sm">${escapeHtml(m.text || '')}</div>`;
                         if (m.type === 'drawing') {
                             contentHtml = `<img src="${m.imageUrl}" class="rounded-lg max-w-[200px] border border-slate-700">`;
@@ -324,21 +357,4 @@
 
                         html += `
                             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                                <div class="max-w-[75%] ${isMe ? 'bg-orange-500 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-slate-800 text-slate-200 rounded-r-2xl rounded-tl-2xl'} px-3 py-2 shadow">
-                                    ${contentHtml}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    messagesContainer.innerHTML = html || `<div class="text-center text-xs text-slate-600 my-auto">Mesajlar 1 saat sonra otomatik kaybolur.</div>`;
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                });
-        }
-
-        async function handleSendMessage(e) {
-            e.preventDefault();
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if (!text || !activeChatUser) return;
-            input.value = '';
-            const r
+                                <div class="max-w-[75%] ${isMe ? 'bg-orange-500 
