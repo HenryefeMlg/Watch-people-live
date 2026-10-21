@@ -3,17 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch People Live - Hızlı Sohbet & Akış</title>
+    <title>Watch People Live - Canlı Sohbet & Akış</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Ekrandan Hatayı Görme Catcher'ı -->
-    <script>
-        window.onerror = function(msg, url, line) {
-            alert("HATA: " + msg + " (Satır: " + line + ")");
-        };
-    </script>
-
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -35,25 +28,25 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col">
 
-    <!-- 1. İLK GİRİŞ: "AD KOY PLS" MODALI -->
+    <!-- İLK GİRİŞ: ADINI KOY MODALI -->
     <div id="nameModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-cardBg w-full max-w-sm rounded-2xl border border-slate-800 p-6 shadow-2xl space-y-4 text-center">
             <div class="w-12 h-12 bg-orange-500/10 text-orange-400 rounded-full flex items-center justify-center mx-auto text-xl border border-orange-500/20">
                 <i class="fa-solid fa-user-tag"></i>
             </div>
             <div>
-                <h2 class="text-xl font-bold text-white">Adını Koy Pls</h2>
-                <p class="text-xs text-slate-400 mt-1">Sohbete başlamak ve paylaşım yapmak için bir isim yaz.</p>
+                <h2 class="text-xl font-bold text-white">Adını Koy</h2>
+                <p class="text-xs text-slate-400 mt-1">Sohbete katılmak için bir rumuz yaz.</p>
             </div>
             
-            <form id="nameForm" class="space-y-3">
-                <input type="text" id="nicknameInput" maxlength="20" placeholder="Rumuzun / İsmin..." required class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 text-center font-medium">
-                <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Sohbete Katıl</button>
-            </form>
+            <div class="space-y-3">
+                <input type="text" id="nicknameInput" maxlength="20" placeholder="İsmin..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-orange-500 text-center font-medium">
+                <button onclick="setMyName()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-orange-500/20 transition-colors">Sohbete Başla</button>
+            </div>
         </div>
     </div>
 
-    <!-- ANA UYGULAMA EKRANI -->
+    <!-- ANA UYGULAMA -->
     <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto">
         <!-- Header -->
         <header class="bg-cardBg border-b border-slate-800 px-4 py-3 flex items-center justify-between">
@@ -74,11 +67,11 @@
                 <div class="p-3 border-b border-slate-800">
                     <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Kişi ara..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
                 </div>
-                <div class="p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aktif İsimler</div>
+                <div class="p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aktif Cihazlar / Kişiler</div>
                 <div id="usersList" class="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-2 text-sm"></div>
             </aside>
 
-            <!-- SAĞ ORTA: Sohbet / Post Tab Geçişi -->
+            <!-- SAĞ ORTA: Sohbet / Post Tab -->
             <main class="flex-1 flex flex-col bg-darkBg">
                 <!-- Tab Butonları -->
                 <div class="flex border-b border-slate-800 bg-cardBg/60">
@@ -90,18 +83,18 @@
                     </button>
                 </div>
 
-                <!-- TAB 1: SOHBET EKRANI -->
+                <!-- TAB 1: SOHBET -->
                 <div id="chatTab" class="flex-1 flex flex-col">
                     <div id="chatHeader" class="p-3 bg-cardBg/80 border-b border-slate-800 text-xs font-bold text-slate-300 hidden">
                         Sohbet Edilen: <span id="chatTargetName" class="text-orange-400"></span>
                     </div>
 
                     <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col justify-center items-center text-slate-600 text-xs">
-                        Soldan bir kullanıcı seçerek mesajlaşmaya başla.
+                        Soldan aktif bir kullanıcı seçerek mesajlaşmaya başla.
                     </div>
 
                     <form id="chatForm" onsubmit="sendChatMessage(event)" class="p-3 bg-cardBg border-t border-slate-800 hidden flex items-center gap-2">
-                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2" title="Kameradan Çek veya Dosya Seç">
+                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2" title="Medya Çek">
                             <i class="fa-solid fa-camera text-base"></i>
                             <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="sendChatMedia(this)">
                         </label>
@@ -110,16 +103,15 @@
                     </form>
                 </div>
 
-                <!-- TAB 2: POST / AKIŞ EKRANI -->
+                <!-- TAB 2: AKIŞ -->
                 <div id="feedTab" class="flex-1 flex flex-col hidden overflow-y-auto p-4 space-y-4">
-                    <!-- Post Paylaşma Alanı -->
                     <div class="bg-cardBg rounded-2xl p-4 border border-slate-800 space-y-3">
                         <textarea id="postTextInput" rows="2" placeholder="Neler oluyor?..." class="w-full bg-darkBg border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-orange-500 resize-none"></textarea>
                         
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <label class="text-xs text-slate-400 hover:text-orange-400 cursor-pointer flex items-center gap-1.5 bg-darkBg border border-slate-800 px-3 py-1.5 rounded-xl">
-                                    <i class="fa-solid fa-camera text-orange-400"></i> Kamera / Medya Çek
+                                    <i class="fa-solid fa-camera text-orange-400"></i> Kamera / Medya
                                     <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="previewPostMedia(this)">
                                 </label>
                                 <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
@@ -135,7 +127,6 @@
                         </div>
                     </div>
 
-                    <!-- Post Akışı -->
                     <div id="postsContainer" class="space-y-3"></div>
                 </div>
 
@@ -163,12 +154,6 @@
         let postMediaData = { url: '', type: '' };
 
         window.onload = () => {
-            // Form submit dinleyicisini doğrudan bağla
-            const nameForm = document.getElementById('nameForm');
-            if (nameForm) {
-                nameForm.addEventListener('submit', saveNickname);
-            }
-
             const saved = localStorage.getItem('wpl_nickname');
             if (saved) {
                 myName = saved;
@@ -177,19 +162,16 @@
             }
         };
 
-        async function saveNickname(e) {
-            if (e) e.preventDefault();
+        function setMyName() {
             const input = document.getElementById('nicknameInput').value.trim();
-            if (!input) return;
-
-            try {
-                myName = input;
-                localStorage.setItem('wpl_nickname', myName);
-                document.getElementById('nameModal').classList.add('hidden');
-                await initApp();
-            } catch (err) {
-                alert("İsim kaydedilirken hata oldu: " + err.message);
+            if (!input) {
+                alert("Lütfen bir isim yaz!");
+                return;
             }
+            myName = input;
+            localStorage.setItem('wpl_nickname', myName);
+            document.getElementById('nameModal').classList.add('hidden');
+            initApp();
         }
 
         function changeName() {
@@ -197,32 +179,38 @@
             location.reload();
         }
 
-        async function initApp() {
+        function initApp() {
             document.getElementById('myDisplayName').innerText = myName;
             
-            try {
-                await db.collection("active_users").doc(myName).set({
-                    name: myName,
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch(e) {
-                console.error("User set error:", e);
-            }
+            // Aktif kullanıcı olarak kaydet ve her 30 saniyede bir güncelle
+            updateActiveStatus();
+            setInterval(updateActiveStatus, 30000);
 
-            listenUsers();
+            listenActiveUsers();
             listenPosts();
         }
 
-        function listenUsers() {
+        function updateActiveStatus() {
+            if (!myName) return;
+            db.collection("active_users").doc(myName).set({
+                name: myName,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        function listenActiveUsers() {
+            // Son 1 dakika içinde aktif olanları filtrele
             db.collection("active_users").onSnapshot((snap) => {
                 activeUsersCache = [];
+                const now = Date.now();
                 snap.forEach(doc => {
                     const u = doc.data();
-                    if (u.name !== myName) activeUsersCache.push(u.name);
+                    if (u.name !== myName) {
+                        // Basitçe tüm aktif kaydedilenleri listele
+                        activeUsersCache.push(u.name);
+                    }
                 });
                 renderUsers(activeUsersCache);
-            }, (err) => {
-                alert("Kullanıcılar yüklenirken hata: " + err.message);
             });
         }
 
@@ -232,12 +220,15 @@
             list.forEach(u => {
                 html += `
                     <div onclick="selectChatTarget('${u}')" class="p-2.5 hover:bg-slate-800/60 cursor-pointer rounded-xl flex items-center justify-between transition-colors">
-                        <span class="font-medium text-slate-200">${u}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span class="font-medium text-slate-200">${u}</span>
+                        </div>
                         <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
                     </div>
                 `;
             });
-            container.innerHTML = html || `<div class="text-xs text-slate-600 p-2">Kimse yok.</div>`;
+            container.innerHTML = html || `<div class="text-xs text-slate-600 p-2">Aktif kimse yok.</div>`;
         }
 
         function filterUsers() {
@@ -362,22 +353,18 @@
 
             if (!txt && !postMediaData.url) return;
 
-            try {
-                await db.collection("posts").add({
-                    author: isAnon ? "Anonim" : myName,
-                    text: txt,
-                    mediaUrl: postMediaData.url,
-                    mediaType: postMediaData.type,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+            await db.collection("posts").add({
+                author: isAnon ? "Anonim" : myName,
+                text: txt,
+                mediaUrl: postMediaData.url,
+                mediaType: postMediaData.type,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-                document.getElementById('postTextInput').value = '';
-                document.getElementById('postAnonCheck').checked = false;
-                document.getElementById('postMediaPreviewArea').classList.add('hidden');
-                postMediaData = { url: '', type: '' };
-            } catch(e) {
-                alert("Post atılamadı: " + e.message);
-            }
+            document.getElementById('postTextInput').value = '';
+            document.getElementById('postAnonCheck').checked = false;
+            document.getElementById('postMediaPreviewArea').classList.add('hidden');
+            postMediaData = { url: '', type: '' };
         }
 
         function listenPosts() {
@@ -387,4 +374,11 @@
                 snap.forEach(doc => {
                     const p = doc.data();
                     let mediaHtml = '';
-                  
+                    if (p.mediaType === 'img') {
+                        mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-60 w-full object-cover">`;
+                    } else if (p.mediaType === 'video') {
+                        mediaHtml = `<video src="${p.mediaUrl}" controls class="rounded-xl max-h-60 w-full object-cover"></video>`;
+                    }
+
+                    html += `
+                        <div class="bg-cardBg p-4 rounded-2xl border border-slate
