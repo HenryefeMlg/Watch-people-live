@@ -2,8 +2,8 @@
 <html lang="tr" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch People Live - Canlı Akış & Sohbet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Watch People Live - Akış & Sohbet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -26,19 +26,18 @@
         }
     </script>
 </head>
-<body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col">
+<body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col justify-between">
 
-    <!-- ANA UYGULAMA -->
-    <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto">
+    <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto pb-16 md:pb-0">
         <!-- Header -->
-        <header class="bg-cardBg border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+        <header class="bg-cardBg border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
             <span class="font-bold text-orange-400 text-lg flex items-center gap-2">
                 <i class="fa-solid fa-bolt"></i> WPL Live
             </span>
             <div class="flex items-center space-x-3">
-                <span id="myDisplayName" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold">...</span>
+                <span id="myDisplayName" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold truncate max-w-[120px]">...</span>
                 <button onclick="changeName()" class="text-xs text-slate-400 hover:text-orange-400 bg-slate-800/50 px-2.5 py-1.5 rounded-xl border border-slate-700" title="İsim Değiştir">
-                    <i class="fa-solid fa-pen-to-square mr-1"></i> Adı Değiştir
+                    <i class="fa-solid fa-pen-to-square"></i> <span class="hidden sm:inline">Adı Değiştir</span>
                 </button>
             </div>
         </header>
@@ -46,19 +45,19 @@
         <!-- İçerik Alanı -->
         <div class="flex-1 flex overflow-hidden">
             
-            <!-- SOL: Aktif Kişiler & Arama -->
-            <aside class="w-1/3 border-r border-slate-800 bg-cardBg/30 flex flex-col">
+            <!-- SOL: Aktif Kişiler (Mobilde Sekme Olarak Değişir) -->
+            <aside id="usersSidebar" class="hidden md:flex w-full md:w-1/3 border-r border-slate-800 bg-cardBg/30 flex-col">
                 <div class="p-3 border-b border-slate-800">
-                    <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Kişi ara..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                    <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Kişi ara..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
                 </div>
-                <div class="p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aktif Cihazlar / Kişiler</div>
+                <div class="p-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Aktif Kişiler</div>
                 <div id="usersList" class="flex-1 overflow-y-auto divide-y divide-slate-800/40 p-2 text-sm"></div>
             </aside>
 
-            <!-- SAĞ ORTA: Sohbet / Post Tab (Varsayılan Akış) -->
-            <main class="flex-1 flex flex-col bg-darkBg">
-                <!-- Tab Butonları -->
-                <div class="flex border-b border-slate-800 bg-cardBg/60">
+            <!-- SAĞ: Akış & Sohbet -->
+            <main id="mainContent" class="flex-1 flex flex-col bg-darkBg w-full">
+                <!-- Masaüstü Sekme Butonları -->
+                <div class="hidden md:flex border-b border-slate-800 bg-cardBg/60">
                     <button onclick="switchTab('feed')" id="tabFeedBtn" class="flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-layer-group"></i> Canlı Akış / Post
                     </button>
@@ -67,56 +66,76 @@
                     </button>
                 </div>
 
-                <!-- TAB 1: AKIŞ (Varsayılan Açılır) -->
-                <div id="feedTab" class="flex-1 flex flex-col overflow-y-auto p-4 space-y-4">
-                    <div class="bg-cardBg rounded-2xl p-4 border border-slate-800 space-y-3">
+                <!-- TAB 1: AKIŞ -->
+                <div id="feedTab" class="flex-1 flex flex-col overflow-y-auto p-3 md:p-4 space-y-4">
+                    <!-- Post Paylaşım Kutusu -->
+                    <div class="bg-cardBg rounded-2xl p-3 md:p-4 border border-slate-800 space-y-3">
                         <textarea id="postTextInput" rows="2" placeholder="Neler oluyor?..." class="w-full bg-darkBg border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-orange-500 resize-none"></textarea>
                         
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <label class="text-xs text-slate-400 hover:text-orange-400 cursor-pointer flex items-center gap-1.5 bg-darkBg border border-slate-800 px-3 py-1.5 rounded-xl">
-                                    <i class="fa-solid fa-camera text-orange-400"></i> Kamera / Medya
-                                    <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="previewPostMedia(this)">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 sm:gap-3">
+                                <label class="text-xs text-slate-400 hover:text-orange-400 cursor-pointer flex items-center gap-1.5 bg-darkBg border border-slate-800 px-3 py-2 rounded-xl active:scale-95 transition-transform">
+                                    <i class="fa-solid fa-camera text-orange-400"></i> Medya Çek/Yükle
+                                    <input type="file" id="postFileInput" accept="image/*,video/*" capture="environment" class="hidden" onchange="previewPostMedia(this)">
                                 </label>
-                                <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer">
-                                    <input type="checkbox" id="postAnonCheck" class="rounded bg-darkBg border-slate-800 text-orange-500 focus:ring-0">
+                                <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+                                    <input type="checkbox" id="postAnonCheck" class="rounded bg-darkBg border-slate-800 text-orange-500 focus:ring-0 w-4 h-4">
                                     Anonim
                                 </label>
                             </div>
-                            <button onclick="submitPost()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-xl text-xs font-semibold">Paylaş</button>
+                            <button onclick="submitPost()" class="bg-orange-500 hover:bg-orange-600 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-orange-500/20 transition-all">Paylaş</button>
                         </div>
-                        <div id="postMediaPreviewArea" class="hidden relative w-full h-32 rounded-lg overflow-hidden border border-slate-700 bg-black flex items-center justify-center">
+                        
+                        <div id="postMediaPreviewArea" class="hidden relative w-full h-40 rounded-lg overflow-hidden border border-slate-700 bg-black flex items-center justify-center">
                             <img id="postImgPreview" src="" class="w-full h-full object-cover hidden">
                             <video id="postVideoPreview" src="" controls class="w-full h-full object-cover hidden"></video>
+                            <button onclick="clearPostMedia()" class="absolute top-2 right-2 bg-black/70 text-white w-7 h-7 rounded-full text-xs flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
 
-                    <div id="postsContainer" class="space-y-3"></div>
+                    <!-- Postlar -->
+                    <div id="postsContainer" class="space-y-4"></div>
                 </div>
 
                 <!-- TAB 2: SOHBET -->
                 <div id="chatTab" class="flex-1 flex flex-col hidden">
-                    <div id="chatHeader" class="p-3 bg-cardBg/80 border-b border-slate-800 text-xs font-bold text-slate-300 hidden">
-                        Sohbet Edilen: <span id="chatTargetName" class="text-orange-400"></span>
+                    <div id="chatHeader" class="p-3 bg-cardBg/80 border-b border-slate-800 text-xs font-bold text-slate-300 hidden flex items-center justify-between">
+                        <div>Sohbet Edilen: <span id="chatTargetName" class="text-orange-400"></span></div>
                     </div>
 
-                    <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col justify-center items-center text-slate-600 text-xs">
-                        Soldan aktif bir kullanıcı seçerek mesajlaşmaya başla.
+                    <div id="chatMessages" class="flex-1 p-3 md:p-4 overflow-y-auto space-y-3 flex flex-col justify-center items-center text-slate-600 text-xs">
+                        Aktif kişilerden birini seçerek sohbet başlat.
                     </div>
 
                     <form id="chatForm" onsubmit="sendChatMessage(event)" class="p-3 bg-cardBg border-t border-slate-800 hidden flex items-center gap-2">
-                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2" title="Medya Çek">
-                            <i class="fa-solid fa-camera text-base"></i>
+                        <label class="text-slate-400 hover:text-orange-400 cursor-pointer p-2 active:scale-95">
+                            <i class="fa-solid fa-camera text-lg"></i>
                             <input type="file" accept="image/*,video/*" capture="environment" class="hidden" onchange="sendChatMedia(this)">
                         </label>
-                        <input type="text" id="chatMsgInput" placeholder="Mesaj yaz..." class="flex-1 bg-darkBg border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
-                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl text-xs font-semibold"><i class="fa-solid fa-paper-plane"></i></button>
+                        <input type="text" id="chatMsgInput" placeholder="Mesaj yaz..." class="flex-1 bg-darkBg border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-600 active:scale-95 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold"><i class="fa-solid fa-paper-plane"></i></button>
                     </form>
                 </div>
 
             </main>
         </div>
     </div>
+
+    <!-- MOBİL ALT MENÜ (DOKUNMATİK TAB BAR) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-cardBg/95 backdrop-blur-lg border-t border-slate-800 flex items-center justify-around py-2 z-30">
+        <button onclick="switchMobileView('feed')" id="mobFeedBtn" class="flex flex-col items-center gap-1 text-orange-400">
+            <i class="fa-solid fa-layer-group text-lg"></i>
+            <span class="text-[10px] font-semibold">Canlı Akış</span>
+        </button>
+        <button onclick="switchMobileView('users')" id="mobUsersBtn" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="fa-solid fa-users text-lg"></i>
+            <span class="text-[10px] font-semibold">Kişiler</span>
+        </button>
+        <button onclick="switchMobileView('chat')" id="mobChatBtn" class="flex flex-col items-center gap-1 text-slate-400">
+            <i class="fa-solid fa-comments text-lg"></i>
+            <span class="text-[10px] font-semibold">Sohbet</span>
+        </button>
+    </nav>
 
     <script>
         const firebaseConfig = {
@@ -158,7 +177,6 @@
 
         function initApp() {
             document.getElementById('myDisplayName').innerText = myName;
-            
             updateActiveStatus();
             setInterval(updateActiveStatus, 30000);
 
@@ -179,9 +197,7 @@
                 activeUsersCache = [];
                 snap.forEach(doc => {
                     const u = doc.data();
-                    if (u.name !== myName) {
-                        activeUsersCache.push(u.name);
-                    }
+                    if (u.name !== myName) activeUsersCache.push(u.name);
                 });
                 renderUsers(activeUsersCache);
             });
@@ -192,21 +208,53 @@
             let html = '';
             list.forEach(u => {
                 html += `
-                    <div onclick="selectChatTarget('${u}')" class="p-2.5 hover:bg-slate-800/60 cursor-pointer rounded-xl flex items-center justify-between transition-colors">
+                    <div onclick="selectChatTarget('${u}')" class="p-3 hover:bg-slate-800/60 active:bg-slate-800 cursor-pointer rounded-xl flex items-center justify-between transition-colors">
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span class="font-medium text-slate-200">${u}</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="font-medium text-slate-200 text-xs sm:text-sm">${u}</span>
                         </div>
                         <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
                     </div>
                 `;
             });
-            container.innerHTML = html || `<div class="text-xs text-slate-600 p-2">Aktif kimse yok.</div>`;
+            container.innerHTML = html || `<div class="text-xs text-slate-600 p-3">Aktif kimse yok.</div>`;
         }
 
         function filterUsers() {
             const q = document.getElementById('searchInput').value.toLowerCase();
             renderUsers(activeUsersCache.filter(u => u.toLowerCase().includes(q)));
+        }
+
+        /* --- MOBİL GEÇİŞ FONKSİYONLARI --- */
+        function switchMobileView(view) {
+            const usersSidebar = document.getElementById('usersSidebar');
+            const mainContent = document.getElementById('mainContent');
+            const mobFeedBtn = document.getElementById('mobFeedBtn');
+            const mobUsersBtn = document.getElementById('mobUsersBtn');
+            const mobChatBtn = document.getElementById('mobChatBtn');
+
+            mobFeedBtn.className = "flex flex-col items-center gap-1 text-slate-400";
+            mobUsersBtn.className = "flex flex-col items-center gap-1 text-slate-400";
+            mobChatBtn.className = "flex flex-col items-center gap-1 text-slate-400";
+
+            if (view === 'users') {
+                usersSidebar.classList.remove('hidden');
+                usersSidebar.classList.add('flex', 'w-full');
+                mainContent.classList.add('hidden');
+                mobUsersBtn.className = "flex flex-col items-center gap-1 text-orange-400";
+            } else if (view === 'chat') {
+                usersSidebar.classList.add('hidden');
+                usersSidebar.classList.remove('flex', 'w-full');
+                mainContent.classList.remove('hidden');
+                switchTab('chat');
+                mobChatBtn.className = "flex flex-col items-center gap-1 text-orange-400";
+            } else {
+                usersSidebar.classList.add('hidden');
+                usersSidebar.classList.remove('flex', 'w-full');
+                mainContent.classList.remove('hidden');
+                switchTab('feed');
+                mobFeedBtn.className = "flex flex-col items-center gap-1 text-orange-400";
+            }
         }
 
         function switchTab(tab) {
@@ -221,78 +269,6 @@
                 document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
                 document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
             }
-        }
-
-        function selectChatTarget(targetName) {
-            switchTab('chat'); // Kişiye tıklayınca direkt sohbet sekmesine geçirir
-            activeTargetUser = targetName;
-            document.getElementById('chatHeader').classList.remove('hidden');
-            document.getElementById('chatForm').classList.remove('hidden');
-            document.getElementById('chatTargetName').innerText = targetName;
-            listenMessages();
-        }
-
-        function getRoomId(u1, u2) { return u1 < u2 ? `${u1}_${u2}` : `${u2}_${u1}`; }
-
-        function listenMessages() {
-            const roomId = getRoomId(myName, activeTargetUser);
-            db.collection("chats").doc(roomId).collection("messages")
-                .orderBy("createdAt", "asc")
-                .onSnapshot((snap) => {
-                    const box = document.getElementById('chatMessages');
-                    let html = '';
-                    snap.forEach(doc => {
-                        const m = doc.data();
-                        const isMe = m.sender === myName;
-                        let content = `<p>${m.text || ''}</p>`;
-                        if (m.type === 'img') content = `<img src="${m.url}" class="rounded-lg max-w-[180px]">`;
-                        if (m.type === 'video') content = `<video src="${m.url}" controls class="rounded-lg max-w-[180px]"></video>`;
-
-                        html += `
-                            <div class="w-full flex flex-col ${isMe ? 'items-end' : 'items-start'} my-1">
-                                <div class="${isMe ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-200'} px-3 py-2 rounded-2xl max-w-[80%] text-xs shadow">
-                                    ${content}
-                                </div>
-                            </div>
-                        `;
-                    });
-                    box.className = "flex-1 p-4 overflow-y-auto space-y-2 flex flex-col";
-                    box.innerHTML = html || `<div class="text-xs text-slate-600 text-center my-auto">Sohbeti başlat...</div>`;
-                    box.scrollTop = box.scrollHeight;
-                });
-        }
-
-        async function sendChatMessage(e) {
-            e.preventDefault();
-            const input = document.getElementById('chatMsgInput');
-            const txt = input.value.trim();
-            if (!txt || !activeTargetUser) return;
-            input.value = '';
-
-            const roomId = getRoomId(myName, activeTargetUser);
-            await db.collection("chats").doc(roomId).collection("messages").add({
-                sender: myName,
-                text: txt,
-                type: 'text',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-
-        function sendChatMedia(input) {
-            if (!input.files || !input.files[0] || !activeTargetUser) return;
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const roomId = getRoomId(myName, activeTargetUser);
-                const isVideo = file.type.startsWith('video');
-                await db.collection("chats").doc(roomId).collection("messages").add({
-                    sender: myName,
-                    url: e.target.result,
-                    type: isVideo ? 'video' : 'img',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            };
-            reader.readAsDataURL(file);
         }
 
         function previewPostMedia(input) {
@@ -321,6 +297,12 @@
             reader.readAsDataURL(file);
         }
 
+        function clearPostMedia() {
+            postMediaData = { url: '', type: '' };
+            document.getElementById('postFileInput').value = '';
+            document.getElementById('postMediaPreviewArea').classList.add('hidden');
+        }
+
         async function submitPost() {
             const txt = document.getElementById('postTextInput').value.trim();
             const isAnon = document.getElementById('postAnonCheck').checked;
@@ -332,13 +314,13 @@
                 text: txt,
                 mediaUrl: postMediaData.url,
                 mediaType: postMediaData.type,
+                likes: [],
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             document.getElementById('postTextInput').value = '';
             document.getElementById('postAnonCheck').checked = false;
-            document.getElementById('postMediaPreviewArea').classList.add('hidden');
-            postMediaData = { url: '', type: '' };
+            clearPostMedia();
         }
 
         function listenPosts() {
@@ -346,27 +328,31 @@
                 const container = document.getElementById('postsContainer');
                 let html = '';
                 snap.forEach(doc => {
+                    const postId = doc.id;
                     const p = doc.data();
+                    const likes = p.likes || [];
+                    const isLiked = likes.includes(myName);
+
                     let mediaHtml = '';
                     if (p.mediaType === 'img') {
-                        mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-60 w-full object-cover">`;
+                        mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-72 w-full object-cover">`;
                     } else if (p.mediaType === 'video') {
-                        mediaHtml = `<video src="${p.mediaUrl}" controls class="rounded-xl max-h-60 w-full object-cover"></video>`;
+                        mediaHtml = `<video src="${p.mediaUrl}" controls class="rounded-xl max-h-72 w-full object-cover"></video>`;
                     }
 
                     html += `
-                        <div class="bg-cardBg p-4 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="bg-cardBg p-3.5 sm:p-4 rounded-2xl border border-slate-800 space-y-3">
                             <div class="flex items-center justify-between text-xs font-semibold text-orange-400">
                                 <span>${p.author}</span>
                             </div>
-                            ${p.text ? `<p class="text-xs text-slate-200">${p.text}</p>` : ''}
+                            ${p.text ? `<p class="text-xs text-slate-200 break-words">${escapeHtml(p.text)}</p>` : ''}
                             ${mediaHtml}
-                        </div>
-                    `;
-                });
-                container.innerHTML = html || `<div class="text-xs text-slate-600 text-center py-4">Henüz paylaşım yok.</div>`;
-            });
-        }
-    </script>
-</body>
-</html>
+
+                            <div class="flex items-center gap-4 pt-2 border-t border-slate-800/60 text-xs">
+                                <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center gap-1.5 ${isLiked ? 'text-red-500 font-bold' : 'text-slate-400 hover:text-red-400'} transition-colors">
+                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
+                                    <span>${likes.length} Beğeni</span>
+                                </button>
+                                <button onclick="toggleComments('${postId}')" class="flex items-center gap-1.5 text-slate-400 hover:text-orange-400 transition-colors">
+                                    <i class="fa-regular fa-comment text-sm"></i>
+          
