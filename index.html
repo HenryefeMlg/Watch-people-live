@@ -7,7 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK -->
+    <!-- Hata Yakalayıcı Pop-up -->
+    <script>
+        window.onerror = function(msg, url, line) {
+            alert("Sistem Hatası: " + msg + " (Satır: " + line + ")");
+        };
+    </script>
+
+    <!-- Firebase SDK (Compat Modu) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
@@ -26,7 +33,7 @@
         }
     </script>
 </head>
-<body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+<body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col justify-between select-none">
 
     <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto pb-16 md:pb-0">
         <!-- Header -->
@@ -36,7 +43,7 @@
             </span>
             <div class="flex items-center space-x-3">
                 <span id="myDisplayName" class="text-xs bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 font-semibold truncate max-w-[120px]">...</span>
-                <button onclick="changeName()" class="text-xs text-slate-400 hover:text-orange-400 bg-slate-800/50 px-2.5 py-1.5 rounded-xl border border-slate-700" title="İsim Değiştir">
+                <button onclick="changeName()" class="text-xs text-slate-400 hover:text-orange-400 bg-slate-800/50 px-2.5 py-1.5 rounded-xl border border-slate-700 active:scale-95 transition-transform" title="İsim Değiştir">
                     <i class="fa-solid fa-pen-to-square"></i> <span class="hidden sm:inline">Adı Değiştir</span>
                 </button>
             </div>
@@ -45,7 +52,7 @@
         <!-- İçerik Alanı -->
         <div class="flex-1 flex overflow-hidden">
             
-            <!-- SOL: Aktif Kişiler (Mobilde Sekme Olarak Değişir) -->
+            <!-- SOL: Aktif Kişiler -->
             <aside id="usersSidebar" class="hidden md:flex w-full md:w-1/3 border-r border-slate-800 bg-cardBg/30 flex-col">
                 <div class="p-3 border-b border-slate-800">
                     <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Kişi ara..." class="w-full bg-darkBg border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-orange-500">
@@ -75,7 +82,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-2 sm:gap-3">
                                 <label class="text-xs text-slate-400 hover:text-orange-400 cursor-pointer flex items-center gap-1.5 bg-darkBg border border-slate-800 px-3 py-2 rounded-xl active:scale-95 transition-transform">
-                                    <i class="fa-solid fa-camera text-orange-400"></i> Medya Çek/Yükle
+                                    <i class="fa-solid fa-camera text-orange-400"></i> Medya Yükle
                                     <input type="file" id="postFileInput" accept="image/*,video/*" capture="environment" class="hidden" onchange="previewPostMedia(this)">
                                 </label>
                                 <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
@@ -93,8 +100,8 @@
                         </div>
                     </div>
 
-                    <!-- Postlar -->
-                    <div id="postsContainer" class="space-y-4"></div>
+                    <!-- Post Akışı -->
+                    <div id="postsContainer" class="space-y-4">Yükleniyor...</div>
                 </div>
 
                 <!-- TAB 2: SOHBET -->
@@ -121,7 +128,7 @@
         </div>
     </div>
 
-    <!-- MOBİL ALT MENÜ (DOKUNMATİK TAB BAR) -->
+    <!-- MOBİL ALT MENÜ -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-cardBg/95 backdrop-blur-lg border-t border-slate-800 flex items-center justify-around py-2 z-30">
         <button onclick="switchMobileView('feed')" id="mobFeedBtn" class="flex flex-col items-center gap-1 text-orange-400">
             <i class="fa-solid fa-layer-group text-lg"></i>
@@ -156,7 +163,7 @@
         let activeUsersCache = [];
         let postMediaData = { url: '', type: '' };
 
-        window.onload = () => {
+        window.onload = function() {
             let saved = localStorage.getItem('wpl_nickname');
             if (!saved) {
                 saved = "Misafir_" + Math.floor(1000 + Math.random() * 9000);
@@ -189,7 +196,7 @@
             db.collection("active_users").doc(myName).set({
                 name: myName,
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            }).catch(err => console.error("Status Update Error:", err));
         }
 
         function listenActiveUsers() {
@@ -197,10 +204,10 @@
                 activeUsersCache = [];
                 snap.forEach(doc => {
                     const u = doc.data();
-                    if (u.name !== myName) activeUsersCache.push(u.name);
+                    if (u.name && u.name !== myName) activeUsersCache.push(u.name);
                 });
                 renderUsers(activeUsersCache);
-            });
+            }, (err) => alert("Aktifler yüklenemedi: " + err.message));
         }
 
         function renderUsers(list) {
@@ -208,10 +215,10 @@
             let html = '';
             list.forEach(u => {
                 html += `
-                    <div onclick="selectChatTarget('${u}')" class="p-3 hover:bg-slate-800/60 active:bg-slate-800 cursor-pointer rounded-xl flex items-center justify-between transition-colors">
+                    <div onclick="selectChatTarget('${escapeHtml(u)}')" class="p-3 hover:bg-slate-800/60 active:bg-slate-800 cursor-pointer rounded-xl flex items-center justify-between transition-colors">
                         <div class="flex items-center gap-2">
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span class="font-medium text-slate-200 text-xs sm:text-sm">${u}</span>
+                            <span class="font-medium text-slate-200 text-xs sm:text-sm">${escapeHtml(u)}</span>
                         </div>
                         <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
                     </div>
@@ -225,7 +232,6 @@
             renderUsers(activeUsersCache.filter(u => u.toLowerCase().includes(q)));
         }
 
-        /* --- MOBİL GEÇİŞ FONKSİYONLARI --- */
         function switchMobileView(view) {
             const usersSidebar = document.getElementById('usersSidebar');
             const mainContent = document.getElementById('mainContent');
@@ -307,20 +313,27 @@
             const txt = document.getElementById('postTextInput').value.trim();
             const isAnon = document.getElementById('postAnonCheck').checked;
 
-            if (!txt && !postMediaData.url) return;
+            if (!txt && !postMediaData.url) {
+                alert("Lütfen metin yazın veya medya seçin.");
+                return;
+            }
 
-            await db.collection("posts").add({
-                author: isAnon ? "Anonim" : myName,
-                text: txt,
-                mediaUrl: postMediaData.url,
-                mediaType: postMediaData.type,
-                likes: [],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            try {
+                await db.collection("posts").add({
+                    author: isAnon ? "Anonim" : myName,
+                    text: txt,
+                    mediaUrl: postMediaData.url,
+                    mediaType: postMediaData.type,
+                    likes: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-            document.getElementById('postTextInput').value = '';
-            document.getElementById('postAnonCheck').checked = false;
-            clearPostMedia();
+                document.getElementById('postTextInput').value = '';
+                document.getElementById('postAnonCheck').checked = false;
+                clearPostMedia();
+            } catch(e) {
+                alert("Post atılırken hata oluştu: " + e.message);
+            }
         }
 
         function listenPosts() {
@@ -343,16 +356,10 @@
                     html += `
                         <div class="bg-cardBg p-3.5 sm:p-4 rounded-2xl border border-slate-800 space-y-3">
                             <div class="flex items-center justify-between text-xs font-semibold text-orange-400">
-                                <span>${p.author}</span>
+                                <span>${escapeHtml(p.author)}</span>
                             </div>
                             ${p.text ? `<p class="text-xs text-slate-200 break-words">${escapeHtml(p.text)}</p>` : ''}
                             ${mediaHtml}
 
                             <div class="flex items-center gap-4 pt-2 border-t border-slate-800/60 text-xs">
-                                <button onclick="toggleLike('${postId}', ${isLiked})" class="flex items-center gap-1.5 ${isLiked ? 'text-red-500 font-bold' : 'text-slate-400 hover:text-red-400'} transition-colors">
-                                    <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
-                                    <span>${likes.length} Beğeni</span>
-                                </button>
-                                <button onclick="toggleComments('${postId}')" class="flex items-center gap-1.5 text-slate-400 hover:text-orange-400 transition-colors">
-                                    <i class="fa-regular fa-comment text-sm"></i>
-          
+                                <button onclick="toggleLike('${postId}', ${isLiked})" class="flex
