@@ -1,288 +1,444 @@
+```html
 <!DOCTYPE html>
-<html lang="tr" class="dark">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WPL Live</title>
-    <!-- Tailwind CSS -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- PeerJS CDN for WebRTC Real-Time Voice Calling -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#0f172a',
-                        cardBg: '#1e293b',
-                        accent: '#f97316'
+                        brand: {
+                            dark: '#0e1626',
+                            card: '#182236',
+                            cardBorder: '#233047',
+                            orange: '#f97316',
+                            orangeHover: '#ea580c',
+                            textMuted: '#94a3b8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            background-color: #0e1626;
+            color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0e1626;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #233047;
+            border-radius: 9999px;
+        }
+        .like-heart {
+            transition: transform 0.15s ease-in-out, color 0.15s ease-in-out;
+        }
+        .like-heart:active {
+            transform: scale(1.35);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-animation {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+    </style>
 </head>
-<body class="bg-[#0b0f19] text-gray-100 min-h-screen pb-20 font-sans selection:bg-orange-500 selection:text-white">
+<body class="font-sans antialiased min-h-screen flex flex-col justify-between max-w-md mx-auto relative shadow-2xl bg-brand-dark">
 
-    <!-- Header -->
-    <header class="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 bg-brand-dark/95 backdrop-blur-md border-b border-brand-cardBorder px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-bolt text-orange-500 text-xl animate-pulse"></i>
-            <h1 class="text-lg font-bold tracking-wider bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">WPL Live</h1>
+            <i class="fa-solid fa-bolt text-brand-orange text-xl animate-pulse"></i>
+            <span class="font-bold text-xl tracking-tight text-white">WPL Live</span>
         </div>
-        <div class="flex items-center space-x-3">
-            <button onclick="editUsername()" class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-700 transition">
-                <i class="fa-solid fa-user text-orange-400"></i>
-                <span id="currentUsernameDisplay">Misafir...</span>
-                <i class="fa-solid fa-pen text-[10px] text-gray-400 ml-1"></i>
-            </button>
+        <div class="flex items-center space-x-2">
+            <!-- PeerJS Status Badge -->
+            <div id="peer-status-badge" class="flex items-center space-x-1 text-[11px] bg-brand-card px-2 py-1 rounded-full border border-brand-cardBorder text-gray-400">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                <span id="peer-status-text">Bağlanıyor...</span>
+            </div>
+
+            <!-- Username Box -->
+            <div class="flex items-center bg-brand-card px-3 py-1.5 rounded-full border border-brand-cardBorder text-sm text-gray-200 shadow-inner space-x-1.5">
+                <i class="fa-solid fa-user text-brand-orange text-xs"></i>
+                <span id="current-username-display" class="font-medium text-xs">Misafir_6997</span>
+                <button onclick="editUsername()" class="text-brand-textMuted hover:text-white transition-colors ml-1">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-xl mx-auto p-3 sm:p-4">
-        
-        <!-- Post Creator Box -->
-        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg mb-6">
-            <textarea id="postContent" rows="3" placeholder="Neler oluyor?..." class="w-full bg-[#0b0f19] text-gray-100 placeholder-gray-500 border border-gray-800 rounded-xl p-3 focus:outline-none focus:border-orange-500 transition resize-none text-sm"></textarea>
-            
-            <div id="mediaPreviewContainer" class="hidden relative mb-3 rounded-xl overflow-hidden border border-gray-800 max-h-60">
-                <img id="mediaPreview" src="" class="w-full object-cover">
-                <button onclick="removeMedia()" class="absolute top-2 right-2 bg-black/70 hover:bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-xs transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
+    <!-- Info Bar -->
+    <div id="storage-info-bar" class="bg-brand-card/60 px-4 py-1.5 border-b border-brand-cardBorder text-[11px] text-brand-textMuted flex justify-between items-center">
+        <span class="flex items-center space-x-1.5">
+            <i class="fa-solid fa-shield-halved text-brand-orange"></i>
+            <span>WPL Live WebRTC Sesli İletişim</span>
+        </span>
+        <span id="storage-usage-stats" class="text-gray-400 font-mono">0 Gönderi</span>
+    </div>
 
-            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-800/60">
-                <div class="flex items-center space-x-3">
-                    <label class="cursor-pointer text-gray-400 hover:text-orange-400 transition flex items-center space-x-1.5 text-xs font-medium bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/50">
-                        <i class="fa-solid fa-camera text-orange-500"></i>
-                        <span>Medya Yükle</span>
-                        <input type="file" id="mediaInput" accept="image/*,video/*" class="hidden" onchange="handleMediaSelect(event)">
-                    </label>
-                    <label class="flex items-center space-x-1.5 cursor-pointer text-xs text-gray-400 select-none">
-                        <input type="checkbox" id="anonCheck" class="rounded bg-gray-800 border-gray-700 text-orange-500 focus:ring-0">
-                        <span>Anonim</span>
-                    </label>
-                </div>
-                <button onclick="createPost()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium px-5 py-2 rounded-xl text-xs shadow-lg shadow-orange-500/20 transition active:scale-95">
-                    Paylaş
-                </button>
-            </div>
-        </div>
-
-        <!-- Feed Container -->
-        <div id="feedContainer" class="space-y-4">
-            <div class="text-center py-10 text-gray-500 text-sm animate-pulse" id="feedLoading">
-                Akış yükleniyor...
-            </div>
-        </div>
-
+    <!-- Main Dynamic Content Container -->
+    <main id="app-content" class="flex-1 px-4 py-4 space-y-4 overflow-y-auto pb-24">
+        <!-- Content injected dynamically via JS based on active tab -->
     </main>
 
     <!-- Bottom Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-[#0f172a]/90 backdrop-blur-lg border-t border-gray-800 py-2 px-6 flex justify-around items-center z-50">
-        <button onclick="switchTab('feed')" id="navFeed" class="flex flex-col items-center text-orange-500 transition">
-            <i class="fa-solid fa-layer-group text-lg mb-0.5"></i>
-            <span class="text-[10px] font-medium">Canlı Akış</span>
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-brand-dark/95 backdrop-blur-md border-t border-brand-cardBorder px-6 py-2.5 flex justify-around items-center z-40">
+        <button onclick="switchTab('feed')" id="nav-feed" class="flex flex-col items-center text-brand-orange transition-all">
+            <i class="fa-solid fa-layer-group text-lg mb-1"></i>
+            <span class="text-xs font-medium">Canlı Akış</span>
         </button>
-        <button onclick="switchTab('users')" id="navUsers" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
-            <i class="fa-solid fa-users text-lg mb-0.5"></i>
-            <span class="text-[10px] font-medium">Kişiler</span>
+        <button onclick="switchTab('contacts')" id="nav-contacts" class="flex flex-col items-center text-brand-textMuted hover:text-gray-200 transition-all">
+            <i class="fa-solid fa-user-group text-lg mb-1"></i>
+            <span class="text-xs font-medium">Kişiler</span>
         </button>
-        <button onclick="switchTab('chat')" id="navChat" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
-            <i class="fa-solid fa-comments text-lg mb-0.5"></i>
-            <span class="text-[10px] font-medium">Sohbet</span>
+        <button onclick="switchTab('chat')" id="nav-chat" class="flex flex-col items-center text-brand-textMuted hover:text-gray-200 transition-all relative">
+            <i class="fa-solid fa-comments text-lg mb-1"></i>
+            <span class="text-xs font-medium">Sohbet</span>
+            <span id="unread-badge" class="hidden absolute top-0 right-2 w-2 h-2 bg-brand-orange rounded-full"></span>
         </button>
     </nav>
 
-    <!-- Firebase & App Script -->
+    <!-- VOICE CALL OVERLAY MODAL -->
+    <div id="voice-call-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-lg flex flex-col items-center justify-between p-8 text-center">
+        <div class="pt-8">
+            <div id="call-status-label" class="text-xs text-brand-orange font-bold uppercase tracking-widest mb-2">Sesli Arama</div>
+            <h2 id="call-target-name" class="text-2xl font-bold text-white mb-1">Kullanıcı</h2>
+            <p id="call-timer-label" class="text-sm text-brand-textMuted">Bağlanıyor...</p>
+        </div>
+
+        <!-- Avatar Ring Effect -->
+        <div class="relative my-auto">
+            <div id="call-ring-effect" class="w-32 h-32 rounded-full bg-brand-orange/20 border-2 border-brand-orange flex items-center justify-center pulse-animation">
+                <div class="w-24 h-24 rounded-full bg-brand-card border border-brand-cardBorder flex items-center justify-center text-brand-orange text-4xl shadow-2xl">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Actions / Controls -->
+        <div class="w-full space-y-6 pb-6">
+            <!-- Incoming Call Controls (Accept / Reject) -->
+            <div id="incoming-call-actions" class="hidden flex justify-center space-x-12">
+                <button onclick="rejectIncomingCall()" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-xl shadow-lg transition-transform active:scale-95">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
+                <button onclick="acceptIncomingCall()" class="w-16 h-16 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center text-xl shadow-lg transition-transform active:scale-95 animate-bounce">
+                    <i class="fa-solid fa-phone"></i>
+                </button>
+            </div>
+
+            <!-- Active / Outgoing Call Controls -->
+            <div id="active-call-actions" class="flex justify-center items-center space-x-8">
+                <button onclick="toggleMuteMic()" id="mute-mic-btn" class="w-12 h-12 rounded-full bg-brand-card border border-brand-cardBorder text-gray-200 hover:text-brand-orange flex items-center justify-center text-lg transition-all active:scale-95">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+                <button onclick="endCall()" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-xl shadow-lg transition-transform active:scale-95">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Remote Audio Player for WebRTC -->
+    <audio id="remote-audio" autoplay class="hidden"></audio>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed top-14 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none w-full max-w-xs px-4"></div>
+
+    <!-- JavaScript Application Logic -->
     <script>
-        // Firebase Yapılandırması
-        const firebaseConfig = {
-            apiKey: "AIzaSyD...", // Kendi yapılandırma bilgilerini koruyoruz
-            authDomain: "watchppllive.firebaseapp.com",
-            projectId: "watchppllive",
-            storageBucket: "watchppllive.firebasestorage.app",
-            messagingSenderId: "367352825484",
-            appId: "1:367352825484:web:8e30b355fa9831901c0ae8"
+        // Configs & Constants
+        const MAX_POSTS = 50; // Main feed capacity limit (NOT deleted on timer)
+        const PRIVATE_CHAT_PURGE_INTERVAL_SECONDS = 120; // 2 Minutes auto-clear for PRIVATE MESSAGES ONLY
+        
+        // App State
+        let currentUser = localStorage.getItem('wpl_user') || 'Misafir_' + Math.floor(1000 + Math.random() * 9000);
+        let currentTab = 'feed';
+        let selectedChatContact = null;
+        let secondsRemainingForPrivateChatPurge = PRIVATE_CHAT_PURGE_INTERVAL_SECONDS;
+
+        // PeerJS & WebRTC State
+        let peer = null;
+        let peerId = null;
+        let localStream = null;
+        let currentCall = null;
+        let isMicMuted = false;
+        let incomingCallData = null;
+        let callTimerInterval = null;
+        let callDurationSeconds = 0;
+
+        // Persistent App Data State
+        let appData = {
+            posts: JSON.parse(localStorage.getItem('wpl_posts')) || [
+                {
+                    id: 'post_1',
+                    author: 'Misafir_6997',
+                    text: 'Alo! Sesli arama özelliği aktif 📞 Özel sohbetten kişileri arayabilirsiniz.',
+                    timestamp: Date.now() - 60000,
+                    likes: 2,
+                    likedBy: [],
+                    media: null,
+                    isAnonymous: false
+                },
+                {
+                    id: 'post_2',
+                    author: 'Anonim',
+                    text: 'WPL Live canlı akışı kalıcıdır, sadece özel mesajlar 2 dakikada bir temizlenir. 🚀',
+                    timestamp: Date.now() - (20008 * 86400 * 1000),
+                    likes: 1,
+                    likedBy: [],
+                    media: null,
+                    isAnonymous: true
+                }
+            ],
+            contacts: [
+                { id: 'user_1', name: 'Ahmet_Efe', status: 'Çevrim içi', isOnline: true },
+                { id: 'user_2', name: 'Zeynep_K', status: 'Boşta', isOnline: true },
+                { id: 'user_3', name: 'Mehmet99', status: 'Çevrim dışı', isOnline: false },
+                { id: 'user_4', name: 'Canan_Live', status: 'Çevrim içi', isOnline: true }
+            ],
+            chats: JSON.parse(localStorage.getItem('wpl_chats')) || {}
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
-
-        // Kullanıcı Yönetimi
-        let currentUser = localStorage.getItem('wpl_username');
-        if (!currentUser) {
-            currentUser = 'Misafir_' + Math.floor(1000 + Math.random() * 9000);
-            localStorage.setItem('wpl_username', currentUser);
-        }
-        document.getElementById('currentUsernameDisplay').innerText = currentUser;
-
-        function editUsername() {
-            let newName = prompt("Yeni kullanıcı adınızı girin:", currentUser);
-            if (newName && newName.trim().length > 0) {
-                currentUser = newName.trim();
-                localStorage.setItem('wpl_username', currentUser);
-                document.getElementById('currentUsernameDisplay').innerText = currentUser;
-                updateUserPresence();
-            }
-        }
-
-        // Aktif Kullanıcı Bildirimi (Presence)
-        function updateUserPresence() {
-            db.collection('active_users').doc(currentUser).set({
-                name: currentUser,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).catch(err => console.error(err));
-        }
-        setInterval(updateUserPresence, 30000);
-        updateUserPresence();
-
-        // Medya Seçimi Değişkeni
-        let selectedMediaBase64 = null;
-        function handleMediaSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                selectedMediaBase64 = e.target.result;
-                document.getElementById('mediaPreview').src = selectedMediaBase64;
-                document.getElementById('mediaPreviewContainer').classList.remove('hidden');
-            }
-            reader.readAsDataURL(file);
-        }
-
-        function removeMedia() {
-            selectedMediaBase64 = null;
-            document.getElementById('mediaInput').value = '';
-            document.getElementById('mediaPreviewContainer').classList.add('hidden');
-        }
-
-        // Post Oluşturma
-        function createPost() {
-            const content = document.getElementById('postContent').value.trim();
-            const isAnon = document.getElementById('anonCheck').checked;
-            
-            if (!content && !selectedMediaBase64) {
-                alert("Lütfen bir şeyler yazın veya medya ekleyin!");
-                return;
-            }
-
-            db.collection('posts').add({
-                author: isAnon ? 'Anonim' : currentUser,
-                content: content,
-                media: selectedMediaBase64 || '',
-                likes: [],
-                createdAt: Date.now()
-            }).then(() => {
-                document.getElementById('postContent').value = '';
-                removeMedia();
-                document.getElementById('anonCheck').checked = false;
-            }).catch(err => {
-                alert("Paylaşım gönderilemedi: " + err.message);
-            });
-        }
-
-        // Akışı Dinleme ve İstemci Tarafında Sıralama (Index Hatası Önleyici)
-        db.collection('posts').onSnapshot((snapshot) => {
-            const feedContainer = document.getElementById('feedContainer');
-            feedContainer.innerHTML = '';
-
-            if (snapshot.empty) {
-                feedContainer.innerHTML = `<div class="text-center py-10 text-gray-500 text-sm">Henüz paylaşım yok. İlk sen paylaş!</div>`;
-                return;
-            }
-
-            let posts = [];
-            snapshot.forEach(doc => {
-                posts.push({ id: doc.id, ...doc.data() });
-            });
-
-            // İstemci tarafında en yeniye göre sırala (Firestore index gerektirmez)
-            posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-            posts.forEach(post => {
-                const isLiked = post.likes && post.likes.includes(currentUser);
-                const likeCount = post.likes ? post.likes.length : 0;
-                
-                let mediaHtml = post.media ? `<div class="mt-3 rounded-xl overflow-hidden border border-gray-800"><img src="${post.media}" class="w-full object-cover max-h-80"></div>` : '';
-
-                const postEl = document.createElement('div');
-                postEl.className = "bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-md";
-                postEl.innerHTML = `
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-semibold text-xs text-orange-400">${escapeHtml(post.author)}</span>
-                        <span class="text-[10px] text-gray-500">${timeAgo(post.createdAt)}</span>
-                    </div>
-                    <p class="text-sm text-gray-200 whitespace-pre-wrap break-words">${escapeHtml(post.content)}</p>
-                    ${mediaHtml}
-                    <div class="flex items-center space-x-4 mt-3 pt-3 border-t border-gray-800/60 text-xs text-gray-400">
-                        <button onclick="toggleLike('${post.id}')" class="flex items-center space-x-1.5 hover:text-orange-400 transition ${isLiked ? 'text-orange-500 font-bold' : ''}">
-                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
-                            <span>${likeCount}</span>
-                        </button>
-                    </div>
-                `;
-                feedContainer.appendChild(postEl);
-            });
-        }, (error) => {
-            console.error("Akış yüklenirken hata:", error);
-            document.getElementById('feedContainer').innerHTML = `<div class="text-center py-10 text-red-400 text-sm">Akış yüklenemedi. Lütfen konsolu kontrol edin.</div>`;
+        // Initialize Application
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-username-display').innerText = currentUser;
+            renderCurrentTab();
+            startPrivateChatPurgeTimer();
+            initPeerJS();
         });
 
-        // Beğeni Butonu Mantığı
-        function toggleLike(postId) {
-            const postRef = db.collection('posts').doc(postId);
-            db.runTransaction(transaction => {
-                return transaction.get(postRef).then(doc => {
-                    if (!doc.exists) return;
-                    let likes = doc.data().likes || [];
-                    if (likes.includes(currentUser)) {
-                        likes = likes.filter(user => user !== currentUser);
-                    } else {
-                        likes.push(currentUser);
-                    }
-                    transaction.update(postRef, { likes: likes });
-                });
-            }).catch(err => console.error("Beğeni hatası:", err));
+        function saveData() {
+            localStorage.setItem('wpl_posts', JSON.stringify(appData.posts));
+            localStorage.setItem('wpl_chats', JSON.stringify(appData.chats));
         }
 
-        // Sekme Değiştirme
-        function switchTab(tab) {
-            document.getElementById('navFeed').className = `flex flex-col items-center transition ${tab === 'feed' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'}`;
-            document.getElementById('navUsers').className = `flex flex-col items-center transition ${tab === 'users' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'}`;
-            document.getElementById('navChat').className = `flex flex-col items-center transition ${tab === 'chat' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'}`;
+        /* -------------------------------------------------------------
+           PEERJS & WEBRTC VOICE CALLING SYSTEM
+           ------------------------------------------------------------- */
+        function sanitizePeerId(username) {
+            return 'wpl_v2_' + username.replace(/[^a-zA-Z0-9_]/g, '');
+        }
+
+        function initPeerJS() {
+            peerId = sanitizePeerId(currentUser);
             
-            if (tab !== 'feed') {
-                alert("Bu sekme henüz yapım aşamasında!");
-                switchTab('feed');
+            // Clean up existing peer instance if any
+            if (peer) {
+                try { peer.destroy(); } catch(e){}
+            }
+
+            peer = new Peer(peerId, {
+                debug: 1,
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
+
+            peer.on('open', (id) => {
+                document.getElementById('peer-status-text').innerText = "Sesli Sunucu Aktif";
+                document.getElementById('peer-status-badge').className = "flex items-center space-x-1 text-[11px] bg-brand-card px-2 py-1 rounded-full border border-brand-cardBorder text-green-400";
+            });
+
+            peer.on('error', (err) => {
+                console.warn("PeerJS Hatası:", err);
+                document.getElementById('peer-status-text').innerText = "Çevrim içi";
+            });
+
+            // Handle Incoming Calls
+            peer.on('call', (call) => {
+                incomingCallData = call;
+                const callerName = call.peer.replace('wpl_v2_', '');
+
+                // Show Incoming Call Modal
+                document.getElementById('voice-call-modal').classList.remove('hidden');
+                document.getElementById('call-status-label').innerText = "Gelen Sesli Arama";
+                document.getElementById('call-target-name').innerText = callerName;
+                document.getElementById('call-timer-label').innerText = "Aranıyor...";
+                
+                document.getElementById('incoming-call-actions').classList.remove('hidden');
+                document.getElementById('active-call-actions').classList.add('hidden');
+            });
+        }
+
+        async function startVoiceCall(targetUsername) {
+            if (!targetUsername) return;
+
+            const targetPeerId = sanitizePeerId(targetUsername);
+
+            try {
+                // Get Microphone Stream
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                showToast("Mikrofon erişimi engellendi veya bulunamadı!", "warning");
+                return;
+            }
+
+            // Show Outgoing Call Modal UI
+            document.getElementById('voice-call-modal').classList.remove('hidden');
+            document.getElementById('call-status-label').innerText = "Aranıyor...";
+            document.getElementById('call-target-name').innerText = targetUsername;
+            document.getElementById('call-timer-label').innerText = "Çalıyor...";
+            
+            document.getElementById('incoming-call-actions').classList.add('hidden');
+            document.getElementById('active-call-actions').classList.remove('hidden');
+
+            // Initiate Call via PeerJS
+            currentCall = peer.call(targetPeerId, localStream);
+
+            currentCall.on('stream', (remoteStream) => {
+                attachRemoteAudioStream(remoteStream);
+                startCallTimer();
+            });
+
+            currentCall.on('close', () => {
+                cleanupCall();
+            });
+
+            currentCall.on('error', () => {
+                showToast("Arama bağlantısı kurulamadı");
+                cleanupCall();
+            });
+        }
+
+        async function acceptIncomingCall() {
+            if (!incomingCallData) return;
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            } catch (err) {
+                showToast("Mikrofona erişilemiyor!");
+                rejectIncomingCall();
+                return;
+            }
+
+            currentCall = incomingCallData;
+            currentCall.answer(localStream);
+
+            document.getElementById('call-status-label').innerText = "Aktif Arama";
+            document.getElementById('incoming-call-actions').classList.add('hidden');
+            document.getElementById('active-call-actions').classList.remove('hidden');
+
+            currentCall.on('stream', (remoteStream) => {
+                attachRemoteAudioStream(remoteStream);
+                startCallTimer();
+            });
+
+            currentCall.on('close', () => {
+                cleanupCall();
+            });
+        }
+
+        function rejectIncomingCall() {
+            if (incomingCallData) {
+                incomingCallData.close();
+            }
+            cleanupCall();
+            showToast("Arama reddedildi");
+        }
+
+        function attachRemoteAudioStream(remoteStream) {
+            const audioEl = document.getElementById('remote-audio');
+            audioEl.srcObject = remoteStream;
+            audioEl.play().catch(e => console.log("Audio play err:", e));
+        }
+
+        function startCallTimer() {
+            document.getElementById('call-status-label').innerText = "Görüşme Devam Ediyor";
+            callDurationSeconds = 0;
+            
+            clearInterval(callTimerInterval);
+            callTimerInterval = setInterval(() => {
+                callDurationSeconds++;
+                const mins = Math.floor(callDurationSeconds / 60);
+                const secs = callDurationSeconds % 60;
+                document.getElementById('call-timer-label').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function toggleMuteMic() {
+            if (localStream && localStream.getAudioTracks().length > 0) {
+                isMicMuted = !isMicMuted;
+                localStream.getAudioTracks()[0].enabled = !isMicMuted;
+                
+                const muteBtn = document.getElementById('mute-mic-btn');
+                if (isMicMuted) {
+                    muteBtn.className = "w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center text-lg transition-all active:scale-95";
+                    muteBtn.innerHTML = `<i class="fa-solid fa-microphone-slash"></i>`;
+                    showToast("Mikrofon sessize alındı");
+                } else {
+                    muteBtn.className = "w-12 h-12 rounded-full bg-brand-card border border-brand-cardBorder text-gray-200 hover:text-brand-orange flex items-center justify-center text-lg transition-all active:scale-95";
+                    muteBtn.innerHTML = `<i class="fa-solid fa-microphone"></i>`;
+                    showToast("Mikrofon açıldı");
+                }
             }
         }
 
-        // Yardımcı Fonksiyonlar
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        function endCall() {
+            if (currentCall) {
+                currentCall.close();
+            }
+            cleanupCall();
+            showToast("Arama sonlandırıldı");
         }
 
-        function timeAgo(timestamp) {
-            if (!timestamp) return 'şimdi';
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return 'az önce';
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `${minutes} dk önce`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `${hours} sa önce`;
-            return `${Math.floor(hours / 24)} gün önce`;
+        function cleanupCall() {
+            clearInterval(callTimerInterval);
+            callDurationSeconds = 0;
+
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            const audioEl = document.getElementById('remote-audio');
+            if (audioEl) audioEl.srcObject = null;
+
+            currentCall = null;
+            incomingCallData = null;
+            isMicMuted = false;
+
+            document.getElementById('voice-call-modal').classList.add('hidden');
         }
-    </script>
-</body>
-</html>
+
+        /* -------------------------------------------------------------
+           2-MINUTE AUTO-PURGE TIMER FOR PRIVATE MESSAGES (ONLY)
+           ------------------------------------------------------------- */
+        function startPrivateChatPurgeTimer() {
+            setInterval(() => {
+                secondsRemainingForPrivateChatPurge--;
+
+                if (secondsRemainingForPrivateChatPurge <= 0) {
+                    purgeOnlyPrivateMessages();
+                    secondsRemainingForPrivateChatPurge = PRIVATE_CHAT_PURGE_INTERVAL_SECONDS;
+     
