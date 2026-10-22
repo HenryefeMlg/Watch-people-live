@@ -7,13 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Hata Yakalayıcı Pop-up -->
-    <script>
-        window.onerror = function(msg, url, line) {
-            alert("Sistem Hatası: " + msg + " (Satır: " + line + ")");
-        };
-    </script>
-
     <!-- Firebase SDK (Compat Modu) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -35,7 +28,7 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen font-sans flex flex-col justify-between select-none">
 
-    <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto pb-16 md:pb-0">
+    <div id="appScreen" class="flex-1 flex flex-col max-w-5xl w-full mx-auto pb-20 md:pb-0">
         <!-- Header -->
         <header class="bg-cardBg border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
             <span class="font-bold text-orange-400 text-lg flex items-center gap-2">
@@ -101,7 +94,7 @@
                     </div>
 
                     <!-- Post Akışı -->
-                    <div id="postsContainer" class="space-y-4">Yükleniyor...</div>
+                    <div id="postsContainer" class="space-y-4 text-xs text-slate-500 text-center py-4">Akış yükleniyor...</div>
                 </div>
 
                 <!-- TAB 2: SOHBET -->
@@ -129,7 +122,7 @@
     </div>
 
     <!-- MOBİL ALT MENÜ -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-cardBg/95 backdrop-blur-lg border-t border-slate-800 flex items-center justify-around py-2 z-30">
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-cardBg/95 backdrop-blur-lg border-t border-slate-800 flex items-center justify-around py-3 z-30">
         <button onclick="switchMobileView('feed')" id="mobFeedBtn" class="flex flex-col items-center gap-1 text-orange-400">
             <i class="fa-solid fa-layer-group text-lg"></i>
             <span class="text-[10px] font-semibold">Canlı Akış</span>
@@ -144,6 +137,7 @@
         </button>
     </nav>
 
+    <!-- UYGULAMA MANTIĞI -->
     <script>
         const firebaseConfig = {
           apiKey: "AIzaSyD1AeurYNk8VA1Gm9UGek13PWbFXGAPU1g",
@@ -183,7 +177,9 @@
         }
 
         function initApp() {
-            document.getElementById('myDisplayName').innerText = myName;
+            const nameEl = document.getElementById('myDisplayName');
+            if (nameEl) nameEl.innerText = myName;
+            
             updateActiveStatus();
             setInterval(updateActiveStatus, 30000);
 
@@ -196,7 +192,7 @@
             db.collection("active_users").doc(myName).set({
                 name: myName,
                 lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(err => console.error("Status Update Error:", err));
+            }).catch(err => console.error("Status error:", err));
         }
 
         function listenActiveUsers() {
@@ -207,11 +203,12 @@
                     if (u.name && u.name !== myName) activeUsersCache.push(u.name);
                 });
                 renderUsers(activeUsersCache);
-            }, (err) => alert("Aktifler yüklenemedi: " + err.message));
+            }, (err) => console.error("Users error:", err));
         }
 
         function renderUsers(list) {
             const container = document.getElementById('usersList');
+            if (!container) return;
             let html = '';
             list.forEach(u => {
                 html += `
@@ -228,7 +225,9 @@
         }
 
         function filterUsers() {
-            const q = document.getElementById('searchInput').value.toLowerCase();
+            const input = document.getElementById('searchInput');
+            if (!input) return;
+            const q = input.value.toLowerCase();
             renderUsers(activeUsersCache.filter(u => u.toLowerCase().includes(q)));
         }
 
@@ -238,6 +237,8 @@
             const mobFeedBtn = document.getElementById('mobFeedBtn');
             const mobUsersBtn = document.getElementById('mobUsersBtn');
             const mobChatBtn = document.getElementById('mobChatBtn');
+
+            if (!usersSidebar || !mainContent) return;
 
             mobFeedBtn.className = "flex flex-col items-center gap-1 text-slate-400";
             mobUsersBtn.className = "flex flex-col items-center gap-1 text-slate-400";
@@ -264,16 +265,23 @@
         }
 
         function switchTab(tab) {
+            const feedTab = document.getElementById('feedTab');
+            const chatTab = document.getElementById('chatTab');
+            const tabFeedBtn = document.getElementById('tabFeedBtn');
+            const tabChatBtn = document.getElementById('tabChatBtn');
+
+            if (!feedTab || !chatTab) return;
+
             if (tab === 'feed') {
-                document.getElementById('feedTab').classList.remove('hidden');
-                document.getElementById('chatTab').classList.add('hidden');
-                document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
-                document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
+                feedTab.classList.remove('hidden');
+                chatTab.classList.add('hidden');
+                if(tabFeedBtn) tabFeedBtn.className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
+                if(tabChatBtn) tabChatBtn.className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
             } else {
-                document.getElementById('feedTab').classList.add('hidden');
-                document.getElementById('chatTab').classList.remove('hidden');
-                document.getElementById('tabChatBtn').className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
-                document.getElementById('tabFeedBtn').className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
+                feedTab.classList.add('hidden');
+                chatTab.classList.remove('hidden');
+                if(tabChatBtn) tabChatBtn.className = "flex-1 py-2.5 text-xs font-semibold text-orange-400 border-b-2 border-orange-500 flex items-center justify-center gap-2";
+                if(tabFeedBtn) tabFeedBtn.className = "flex-1 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2";
             }
         }
 
@@ -289,15 +297,13 @@
                 const imgPrev = document.getElementById('postImgPreview');
                 const vidPrev = document.getElementById('postVideoPreview');
                 
-                previewArea.classList.remove('hidden');
+                if(previewArea) previewArea.classList.remove('hidden');
                 if (postMediaData.type === 'video') {
-                    vidPrev.src = postMediaData.url;
-                    vidPrev.classList.remove('hidden');
-                    imgPrev.classList.add('hidden');
+                    if(vidPrev) { vidPrev.src = postMediaData.url; vidPrev.classList.remove('hidden'); }
+                    if(imgPrev) imgPrev.classList.add('hidden');
                 } else {
-                    imgPrev.src = postMediaData.url;
-                    imgPrev.classList.remove('hidden');
-                    vidPrev.classList.add('hidden');
+                    if(imgPrev) { imgPrev.src = postMediaData.url; imgPrev.classList.remove('hidden'); }
+                    if(vidPrev) vidPrev.classList.add('hidden');
                 }
             };
             reader.readAsDataURL(file);
@@ -305,13 +311,19 @@
 
         function clearPostMedia() {
             postMediaData = { url: '', type: '' };
-            document.getElementById('postFileInput').value = '';
-            document.getElementById('postMediaPreviewArea').classList.add('hidden');
+            const fileInput = document.getElementById('postFileInput');
+            const previewArea = document.getElementById('postMediaPreviewArea');
+            if(fileInput) fileInput.value = '';
+            if(previewArea) previewArea.classList.add('hidden');
         }
 
         async function submitPost() {
-            const txt = document.getElementById('postTextInput').value.trim();
-            const isAnon = document.getElementById('postAnonCheck').checked;
+            const txtArea = document.getElementById('postTextInput');
+            const anonCheck = document.getElementById('postAnonCheck');
+            if(!txtArea) return;
+
+            const txt = txtArea.value.trim();
+            const isAnon = anonCheck ? anonCheck.checked : false;
 
             if (!txt && !postMediaData.url) {
                 alert("Lütfen metin yazın veya medya seçin.");
@@ -328,8 +340,8 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                document.getElementById('postTextInput').value = '';
-                document.getElementById('postAnonCheck').checked = false;
+                txtArea.value = '';
+                if(anonCheck) anonCheck.checked = false;
                 clearPostMedia();
             } catch(e) {
                 alert("Post atılırken hata oluştu: " + e.message);
@@ -339,6 +351,7 @@
         function listenPosts() {
             db.collection("posts").orderBy("createdAt", "desc").onSnapshot((snap) => {
                 const container = document.getElementById('postsContainer');
+                if (!container) return;
                 let html = '';
                 snap.forEach(doc => {
                     const postId = doc.id;
@@ -355,11 +368,4 @@
 
                     html += `
                         <div class="bg-cardBg p-3.5 sm:p-4 rounded-2xl border border-slate-800 space-y-3">
-                            <div class="flex items-center justify-between text-xs font-semibold text-orange-400">
-                                <span>${escapeHtml(p.author)}</span>
-                            </div>
-                            ${p.text ? `<p class="text-xs text-slate-200 break-words">${escapeHtml(p.text)}</p>` : ''}
-                            ${mediaHtml}
-
-                            <div class="flex items-center gap-4 pt-2 border-t border-slate-800/60 text-xs">
-                                <button onclick="toggleLike('${postId}', ${isLiked})" class="flex
+                            <div class="flex items-center justify-between text
