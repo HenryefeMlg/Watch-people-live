@@ -348,24 +348,30 @@
             }
         }
 
+        /* AKIŞ DİNLEYİCİSİ (DÜZELTİLDİ) */
         function listenPosts() {
-            db.collection("posts").orderBy("createdAt", "desc").onSnapshot((snap) => {
+            db.collection("posts").onSnapshot((snap) => {
                 const container = document.getElementById('postsContainer');
                 if (!container) return;
-                let html = '';
+
+                let postsList = [];
                 snap.forEach(doc => {
-                    const postId = doc.id;
-                    const p = doc.data();
+                    postsList.push({ id: doc.id, ...doc.data() });
+                });
+
+                // İstemci tarafında en yeni posta göre sıralama
+                postsList.sort((a, b) => {
+                    const timeA = a.createdAt ? (a.createdAt.seconds || Date.now() / 1000) : Date.now() / 1000;
+                    const timeB = b.createdAt ? (b.createdAt.seconds || Date.now() / 1000) : Date.now() / 1000;
+                    return timeB - timeA;
+                });
+
+                let html = '';
+                postsList.forEach(p => {
+                    const postId = p.id;
                     const likes = p.likes || [];
                     const isLiked = likes.includes(myName);
 
                     let mediaHtml = '';
                     if (p.mediaType === 'img') {
-                        mediaHtml = `<img src="${p.mediaUrl}" class="rounded-xl max-h-72 w-full object-cover">`;
-                    } else if (p.mediaType === 'video') {
-                        mediaHtml = `<video src="${p.mediaUrl}" controls class="rounded-xl max-h-72 w-full object-cover"></video>`;
-                    }
-
-                    html += `
-                        <div class="bg-cardBg p-3.5 sm:p-4 rounded-2xl border border-slate-800 space-y-3">
-                            <div class="flex items-center justify-between text
+         
