@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WPL Live</title>
-    <!-- Tailwind CSS -->
+    <title>Watch People Live</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,271 +18,603 @@
                     }
                 }
             }
-        }
+        };
     </script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK (Compat) -->
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
+
 <body class="bg-[#0b0f19] text-gray-100 min-h-screen pb-20 font-sans selection:bg-orange-500 selection:text-white">
 
-    <!-- Header -->
-    <header class="sticky top-0 z-50 bg-[#0f172a]/80 backdrop-blur-md border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+    <!-- HEADER -->
+    <header class="sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur-md border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+
         <div class="flex items-center space-x-2">
             <i class="fa-solid fa-bolt text-orange-500 text-xl animate-pulse"></i>
-            <h1 class="text-lg font-bold tracking-wider bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">WPL Live</h1>
+            <h1 class="text-lg font-bold tracking-wider bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
+                WPL Live
+            </h1>
         </div>
-        <div class="flex items-center space-x-3">
-            <button onclick="editUsername()" class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-700 transition">
-                <i class="fa-solid fa-user text-orange-400"></i>
-                <span id="currentUsernameDisplay">Misafir...</span>
-                <i class="fa-solid fa-pen text-[10px] text-gray-400 ml-1"></i>
-            </button>
-        </div>
+
+        <button onclick="editUsername()"
+                class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-700">
+
+            <img id="headerAvatar"
+                 class="w-7 h-7 rounded-full object-cover"
+                 alt="Profil"
+                 src="">
+
+            <span id="currentUsernameDisplay">Misafir...</span>
+
+            <i class="fa-solid fa-pen text-[10px] text-gray-400"></i>
+        </button>
+
     </header>
 
-    <!-- Main Container -->
     <main class="max-w-xl mx-auto p-3 sm:p-4">
-        
-        <!-- Post Creator Box -->
-        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg mb-6">
-            <textarea id="postContent" rows="3" placeholder="Neler oluyor?..." class="w-full bg-[#0b0f19] text-gray-100 placeholder-gray-500 border border-gray-800 rounded-xl p-3 focus:outline-none focus:border-orange-500 transition resize-none text-sm"></textarea>
-            
-            <div id="mediaPreviewContainer" class="hidden relative mb-3 rounded-xl overflow-hidden border border-gray-800 max-h-60">
-                <img id="mediaPreview" src="" class="w-full object-cover">
-                <button onclick="removeMedia()" class="absolute top-2 right-2 bg-black/70 hover:bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-xs transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
 
-            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-800/60">
+        <!-- FEED SECTION -->
+        <section id="feedSection">
+
+            <!-- PROFİL KARTI -->
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 mb-5">
+
                 <div class="flex items-center space-x-3">
-                    <label class="cursor-pointer text-gray-400 hover:text-orange-400 transition flex items-center space-x-1.5 text-xs font-medium bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/50">
-                        <i class="fa-solid fa-camera text-orange-500"></i>
-                        <span>Medya Yükle</span>
-                        <input type="file" id="mediaInput" accept="image/*,video/*" class="hidden" onchange="handleMediaSelect(event)">
-                    </label>
-                    <label class="flex items-center space-x-1.5 cursor-pointer text-xs text-gray-400 select-none">
-                        <input type="checkbox" id="anonCheck" class="rounded bg-gray-800 border-gray-700 text-orange-500 focus:ring-0">
-                        <span>Anonim</span>
-                    </label>
-                </div>
-                <button onclick="createPost()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium px-5 py-2 rounded-xl text-xs shadow-lg shadow-orange-500/20 transition active:scale-95">
-                    Paylaş
-                </button>
-            </div>
-        </div>
 
-        <!-- Feed Container -->
-        <div id="feedContainer" class="space-y-4">
-            <div class="text-center py-10 text-gray-500 text-sm animate-pulse" id="feedLoading">
-                Akış yükleniyor...
+                    <img id="profileAvatar"
+                         class="w-16 h-16 rounded-full object-cover border-2 border-orange-500"
+                         alt="Profil fotoğrafı"
+                         src="">
+
+                    <div class="flex-1 min-w-0">
+
+                        <h2 id="profileName" class="font-bold text-base break-words"></h2>
+
+                        <p class="text-xs text-gray-400 mt-1">
+                            WPL Live kullanıcısı
+                        </p>
+
+                        <label class="inline-flex items-center space-x-2 mt-2 text-xs text-orange-400 cursor-pointer hover:text-orange-300">
+
+                            <i class="fa-solid fa-camera"></i>
+
+                            <span>Profil fotoğrafını değiştir</span>
+
+                            <input id="profileInput"
+                                   type="file"
+                                   accept="image/*"
+                                   class="hidden"
+                                   onchange="handleProfileSelect(event)">
+
+                        </label>
+
+                    </div>
+
+                </div>
+
             </div>
-        </div>
+
+            <!-- POST OLUŞTURMA -->
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg mb-6">
+
+                <div class="flex items-start space-x-3">
+
+                    <img id="composerAvatar"
+                         class="w-10 h-10 rounded-full object-cover"
+                         alt="Profil"
+                         src="">
+
+                    <textarea id="postContent"
+                              rows="3"
+                              maxlength="5000"
+                              placeholder="Neler oluyor?..."
+                              class="flex-1 min-w-0 bg-[#0b0f19] text-gray-100 placeholder-gray-500 border border-gray-800 rounded-xl p-3 focus:outline-none focus:border-orange-500 transition resize-none text-sm"></textarea>
+
+                </div>
+
+                <!-- MEDYA ÖNİZLEME -->
+                <div id="mediaPreviewContainer"
+                     class="hidden relative mt-3 mb-3 rounded-xl overflow-hidden border border-gray-800">
+
+                    <img id="mediaPreview"
+                         src=""
+                         class="w-full object-contain max-h-60"
+                         alt="Medya önizlemesi">
+
+                    <button onclick="removeMedia()"
+                            class="absolute top-2 right-2 bg-black/70 hover:bg-black text-white w-8 h-8 rounded-full">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+                <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-800/60">
+
+                    <div class="flex items-center space-x-3">
+
+                        <label class="cursor-pointer text-gray-400 hover:text-orange-400 flex items-center space-x-1.5 text-xs font-medium bg-gray-800/50 px-3 py-2 rounded-lg border border-gray-700/50">
+
+                            <i class="fa-solid fa-camera text-orange-500"></i>
+
+                            <span>Medya Yükle</span>
+
+                            <input type="file"
+                                   id="mediaInput"
+                                   accept="image/*,video/*"
+                                   class="hidden"
+                                   onchange="handleMediaSelect(event)">
+
+                        </label>
+
+                        <label class="flex items-center space-x-1.5 cursor-pointer text-xs text-gray-400 select-none">
+
+                            <input type="checkbox"
+                                   id="anonCheck"
+                                   class="rounded bg-gray-800 border-gray-700 text-orange-500 focus:ring-0">
+
+                            <span>Anonim</span>
+
+                        </label>
+
+                    </div>
+
+                    <button id="publishButton"
+                            onclick="createPost()"
+                            class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium px-5 py-2 rounded-xl text-xs shadow-lg shadow-orange-500/20 active:scale-95">
+
+                        Paylaş
+
+                    </button>
+
+                </div>
+
+                <p class="text-[10px] text-gray-500 mt-3">
+                    En fazla 100 paylaşım tutulur.
+                </p>
+
+            </div>
+
+            <!-- AKIŞ -->
+            <div id="feedContainer" class="space-y-4">
+
+                <div class="text-center py-10 text-gray-500 text-sm animate-pulse">
+                    Akış yükleniyor...
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- USERS SECTION -->
+        <section id="usersSection" class="hidden">
+
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 mb-4">
+
+                <h2 class="font-bold text-lg">
+                    <i class="fa-solid fa-users text-orange-500 mr-2"></i>
+                    Aktif Kişiler
+                </h2>
+
+                <p class="text-xs text-gray-400 mt-1">
+                    Son 90 saniye içinde aktif olan kullanıcılar.
+                </p>
+
+            </div>
+
+            <div id="activeUsersContainer" class="space-y-3">
+
+                <div class="text-center py-8 text-gray-500 text-sm">
+                    Kullanıcılar yükleniyor...
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- CHAT SECTION -->
+        <section id="chatSection" class="hidden">
+
+            <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 text-center">
+
+                <i class="fa-solid fa-comments text-orange-500 text-4xl mb-4"></i>
+
+                <h2 class="font-bold text-lg">Sohbet</h2>
+
+                <p class="text-sm text-gray-400 mt-2">
+                    Özel sohbet özelliği henüz etkinleştirilmedi.
+                </p>
+
+            </div>
+
+        </section>
 
     </main>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-[#0f172a]/90 backdrop-blur-lg border-t border-gray-800 py-2 px-6 flex justify-around items-center z-50">
-        <button onclick="switchTab('feed')" id="navFeed" class="flex flex-col items-center text-orange-500 transition">
+    <!-- BEĞENENLER MODALI -->
+    <div id="likesModal"
+         class="hidden fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4"
+         onclick="closeLikesModal(event)">
+
+        <div class="bg-cardBg border border-gray-700 rounded-2xl w-full max-w-sm max-h-[75vh] overflow-hidden shadow-2xl"
+             onclick="event.stopPropagation()">
+
+            <div class="flex items-center justify-between p-4 border-b border-gray-700">
+
+                <h3 class="font-bold">
+                    <i class="fa-solid fa-heart text-orange-500 mr-2"></i>
+                    Beğenenler
+                </h3>
+
+                <button onclick="closeLikesModal()"
+                        class="text-gray-400 hover:text-white p-2">
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+            <div id="likesList" class="p-4 overflow-y-auto max-h-[55vh] space-y-3"></div>
+
+        </div>
+
+    </div>
+
+    <!-- ALT MENÜ -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0f172a]/95 backdrop-blur-lg border-t border-gray-800 py-2 px-6 flex justify-around items-center z-50">
+
+        <button onclick="switchTab('feed')"
+                id="navFeed"
+                class="flex flex-col items-center text-orange-500">
+
             <i class="fa-solid fa-layer-group text-lg mb-0.5"></i>
             <span class="text-[10px] font-medium">Canlı Akış</span>
+
         </button>
-        <button onclick="switchTab('users')" id="navUsers" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+
+        <button onclick="switchTab('users')"
+                id="navUsers"
+                class="flex flex-col items-center text-gray-400">
+
             <i class="fa-solid fa-users text-lg mb-0.5"></i>
             <span class="text-[10px] font-medium">Kişiler</span>
+
         </button>
-        <button onclick="switchTab('chat')" id="navChat" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition">
+
+        <button onclick="switchTab('chat')"
+                id="navChat"
+                class="flex flex-col items-center text-gray-400">
+
             <i class="fa-solid fa-comments text-lg mb-0.5"></i>
             <span class="text-[10px] font-medium">Sohbet</span>
+
         </button>
+
     </nav>
 
-    <!-- Firebase & App Script -->
-    <script>
-        // Firebase Yapılandırması
-        const firebaseConfig = {
-            apiKey: "AIzaSyD...", // Kendi yapılandırma bilgilerini koruyoruz
-            authDomain: "watchppllive.firebaseapp.com",
-            projectId: "watchppllive",
-            storageBucket: "watchppllive.firebasestorage.app",
-            messagingSenderId: "367352825484",
-            appId: "1:367352825484:web:8e30b355fa9831901c0ae8"
-        };
+<script>
+    // =========================================
+    // FIREBASE YAPILANDIRMASI
+    // =========================================
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
+    const firebaseConfig = {
+        apiKey: "AIzaSyD...",
+        authDomain: "watchppllive.firebaseapp.com",
+        projectId: "watchppllive",
+        storageBucket: "watchppllive.firebasestorage.app",
+        messagingSenderId: "367352825484",
+        appId: "1:367352825484:web:8e30b355fa9831901c0ae8"
+    };
 
-        // Kullanıcı Yönetimi
-        let currentUser = localStorage.getItem('wpl_username');
-        if (!currentUser) {
-            currentUser = 'Misafir_' + Math.floor(1000 + Math.random() * 9000);
-            localStorage.setItem('wpl_username', currentUser);
-        }
-        document.getElementById('currentUsernameDisplay').innerText = currentUser;
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
 
-        function editUsername() {
-            let newName = prompt("Yeni kullanıcı adınızı girin:", currentUser);
-            if (newName && newName.trim().length > 0) {
-                currentUser = newName.trim();
-                localStorage.setItem('wpl_username', currentUser);
-                document.getElementById('currentUsernameDisplay').innerText = currentUser;
-                updateUserPresence();
+    const db = firebase.firestore();
+
+    // =========================================
+    // KULLANICI
+    // =========================================
+
+    let currentUser = localStorage.getItem('wpl_username');
+
+    if (!currentUser) {
+        currentUser = 'Misafir_' + Math.floor(1000 + Math.random() * 9000);
+        localStorage.setItem('wpl_username', currentUser);
+    }
+
+    // Kullanıcı kimliği ad değiştirildiğinde değişmez.
+    let userId = localStorage.getItem('wpl_user_id');
+
+    if (!userId) {
+        userId = (crypto.randomUUID
+            ? crypto.randomUUID()
+            : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+
+        localStorage.setItem('wpl_user_id', userId);
+    }
+
+    const DEFAULT_AVATAR =
+        'data:image/svg+xml;charset=UTF-8,' +
+        encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <rect width="100" height="100" rx="50" fill="#334155"/>
+                <circle cx="50" cy="36" r="19" fill="#94a3b8"/>
+                <path d="M15 95 C15 65 33 57 50 57 C67 57 85 65 85 95"
+                      fill="#94a3b8"/>
+            </svg>
+        `);
+
+    let currentAvatar = DEFAULT_AVATAR;
+    let selectedMediaBase64 = null;
+    let isPublishing = false;
+
+    // Eski paylaşımları da göstermek için author bilgisi korunur.
+    // Yeni paylaşımlarda ownerId, anonimlikten bağımsız olarak saklanır.
+
+    function userDocId(id) {
+        return encodeURIComponent(id);
+    }
+
+    function setAvatarElements(src) {
+        const ids = ['headerAvatar', 'profileAvatar', 'composerAvatar'];
+
+        ids.forEach(id => {
+            const element = document.getElementById(id);
+
+            if (element) {
+                element.src = src || DEFAULT_AVATAR;
             }
-        }
+        });
+    }
 
-        // Aktif Kullanıcı Bildirimi (Presence)
-        function updateUserPresence() {
-            db.collection('active_users').doc(currentUser).set({
-                name: currentUser,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).catch(err => console.error(err));
-        }
-        setInterval(updateUserPresence, 30000);
-        updateUserPresence();
+    function updateUserInterface() {
+        document.getElementById('currentUsernameDisplay').textContent = currentUser;
+        document.getElementById('profileName').textContent = currentUser;
 
-        // Medya Seçimi Değişkeni
-        let selectedMediaBase64 = null;
-        function handleMediaSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        setAvatarElements(currentAvatar);
+    }
+
+    // =========================================
+    // PROFİL FOTOĞRAFI
+    // =========================================
+
+    function compressImage(file, maxSize = 300, quality = 0.72) {
+        return new Promise((resolve, reject) => {
+            if (!file.type.startsWith('image/')) {
+                reject(new Error('Lütfen bir resim dosyası seçin.'));
+                return;
+            }
+
             const reader = new FileReader();
-            reader.onload = function(e) {
-                selectedMediaBase64 = e.target.result;
-                document.getElementById('mediaPreview').src = selectedMediaBase64;
-                document.getElementById('mediaPreviewContainer').classList.remove('hidden');
-            }
+
+            reader.onerror = () => reject(new Error('Dosya okunamadı.'));
+
+            reader.onload = event => {
+                const image = new Image();
+
+                image.onerror = () => reject(new Error('Resim açılamadı.'));
+
+                image.onload = () => {
+                    const canvas = document.createElement('canvas');
+
+                    const ratio = Math.min(
+                        1,
+                        maxSize / Math.max(image.width, image.height)
+                    );
+
+                    canvas.width = Math.max(1, Math.round(image.width * ratio));
+                    canvas.height = Math.max(1, Math.round(image.height * ratio));
+
+                    const context = canvas.getContext('2d');
+
+                    context.drawImage(
+                        image,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    );
+
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+
+                image.src = event.target.result;
+            };
+
             reader.readAsDataURL(file);
-        }
+        });
+    }
 
-        function removeMedia() {
-            selectedMediaBase64 = null;
-            document.getElementById('mediaInput').value = '';
-            document.getElementById('mediaPreviewContainer').classList.add('hidden');
-        }
+    async function handleProfileSelect(event) {
+        const file = event.target.files[0];
 
-        // Post Oluşturma
-        function createPost() {
-            const content = document.getElementById('postContent').value.trim();
-            const isAnon = document.getElementById('anonCheck').checked;
-            
-            if (!content && !selectedMediaBase64) {
-                alert("Lütfen bir şeyler yazın veya medya ekleyin!");
+        if (!file) return;
+
+        try {
+            const compressed = await compressImage(file, 300, 0.7);
+
+            // Firestore belge boyutu sınırını aşmamak için
+            // fotoğrafın boyutunu kontrol ediyoruz.
+            if (compressed.length > 500000) {
+                alert('Fotoğraf çok büyük. Daha küçük bir fotoğraf deneyin.');
                 return;
             }
 
-            db.collection('posts').add({
-                author: isAnon ? 'Anonim' : currentUser,
-                content: content,
-                media: selectedMediaBase64 || '',
-                likes: [],
-                createdAt: Date.now()
-            }).then(() => {
-                document.getElementById('postContent').value = '';
-                removeMedia();
-                document.getElementById('anonCheck').checked = false;
-            }).catch(err => {
-                alert("Paylaşım gönderilemedi: " + err.message);
-            });
+            currentAvatar = compressed;
+            updateUserInterface();
+
+            await db.collection('users')
+                .doc(userDocId(userId))
+                .set({
+                    userId: userId,
+                    name: currentUser,
+                    photo: currentAvatar,
+                    updatedAt: Date.now()
+                }, { merge: true });
+
+            localStorage.setItem('wpl_avatar', currentAvatar);
+
+            alert('Profil fotoğrafın güncellendi.');
+
+        } catch (error) {
+            console.error('Profil fotoğrafı hatası:', error);
+
+            alert(
+                'Profil fotoğrafı kaydedilemedi. ' +
+                'Firebase bağlantısını ve izinlerini kontrol et.'
+            );
+        } finally {
+            event.target.value = '';
+        }
+    }
+
+    async function loadProfile() {
+        const savedAvatar = localStorage.getItem('wpl_avatar');
+
+        if (savedAvatar) {
+            currentAvatar = savedAvatar;
         }
 
-        // Akışı Dinleme ve İstemci Tarafında Sıralama (Index Hatası Önleyici)
-        db.collection('posts').onSnapshot((snapshot) => {
-            const feedContainer = document.getElementById('feedContainer');
-            feedContainer.innerHTML = '';
+        updateUserInterface();
 
-            if (snapshot.empty) {
-                feedContainer.innerHTML = `<div class="text-center py-10 text-gray-500 text-sm">Henüz paylaşım yok. İlk sen paylaş!</div>`;
-                return;
+        try {
+            const doc = await db.collection('users')
+                .doc(userDocId(userId))
+                .get();
+
+            if (doc.exists) {
+                const data = doc.data();
+
+                if (data.photo) {
+                    currentAvatar = data.photo;
+                }
+            } else {
+                await db.collection('users')
+                    .doc(userDocId(userId))
+                    .set({
+                        userId: userId,
+                        name: currentUser,
+                        photo: currentAvatar,
+                        updatedAt: Date.now()
+                    }, { merge: true });
             }
 
-            let posts = [];
-            snapshot.forEach(doc => {
-                posts.push({ id: doc.id, ...doc.data() });
-            });
+            localStorage.setItem('wpl_avatar', currentAvatar);
+            updateUserInterface();
 
-            // İstemci tarafında en yeniye göre sırala (Firestore index gerektirmez)
-            posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        } catch (error) {
+            console.error('Profil yüklenemedi:', error);
+        }
+    }
 
-            posts.forEach(post => {
-                const isLiked = post.likes && post.likes.includes(currentUser);
-                const likeCount = post.likes ? post.likes.length : 0;
-                
-                let mediaHtml = post.media ? `<div class="mt-3 rounded-xl overflow-hidden border border-gray-800"><img src="${post.media}" class="w-full object-cover max-h-80"></div>` : '';
+    // =========================================
+    // KULLANICI ADI
+    // =========================================
 
-                const postEl = document.createElement('div');
-                postEl.className = "bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-md";
-                postEl.innerHTML = `
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-semibold text-xs text-orange-400">${escapeHtml(post.author)}</span>
-                        <span class="text-[10px] text-gray-500">${timeAgo(post.createdAt)}</span>
-                    </div>
-                    <p class="text-sm text-gray-200 whitespace-pre-wrap break-words">${escapeHtml(post.content)}</p>
-                    ${mediaHtml}
-                    <div class="flex items-center space-x-4 mt-3 pt-3 border-t border-gray-800/60 text-xs text-gray-400">
-                        <button onclick="toggleLike('${post.id}')" class="flex items-center space-x-1.5 hover:text-orange-400 transition ${isLiked ? 'text-orange-500 font-bold' : ''}">
-                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
-                            <span>${likeCount}</span>
-                        </button>
-                    </div>
-                `;
-                feedContainer.appendChild(postEl);
-            });
-        }, (error) => {
-            console.error("Akış yüklenirken hata:", error);
-            document.getElementById('feedContainer').innerHTML = `<div class="text-center py-10 text-red-400 text-sm">Akış yüklenemedi. Lütfen konsolu kontrol edin.</div>`;
+    async function editUsername() {
+        const newName = prompt('Yeni kullanıcı adınızı girin:', currentUser);
+
+        if (!newName || !newName.trim()) return;
+
+        const cleanName = newName.trim().slice(0, 40);
+
+        if (cleanName.includes('/')) {
+            alert('Kullanıcı adında / karakteri kullanılamaz.');
+            return;
+        }
+
+        currentUser = cleanName;
+
+        localStorage.setItem('wpl_username', currentUser);
+
+        updateUserInterface();
+
+        try {
+            await db.collection('users')
+                .doc(userDocId(userId))
+                .set({
+                    userId: userId,
+                    name: currentUser,
+                    photo: currentAvatar,
+                    updatedAt: Date.now()
+                }, { merge: true });
+
+            await updateUserPresence();
+
+        } catch (error) {
+            console.error('Kullanıcı adı güncellenemedi:', error);
+
+            alert('Kullanıcı adı yerel olarak değiştirildi ancak sunucu güncellemesi başarısız oldu.');
+        }
+    }
+
+    // =========================================
+    // AKTİF KULLANICI SİSTEMİ
+    // =========================================
+
+    async function updateUserPresence() {
+        try {
+            await db.collection('active_users')
+                .doc(userDocId(userId))
+                .set({
+                    userId: userId,
+                    name: currentUser,
+                    photo: currentAvatar,
+                    lastSeen: Date.now()
+                }, { merge: true });
+
+        } catch (error) {
+            console.error('Aktiflik güncellenemedi:', error);
+        }
+    }
+
+    updateUserInterface();
+    loadProfile().then(updateUserPresence);
+
+    // Aktiflik bilgisi yaklaşık 20 saniyede bir yenilenir.
+    setInterval(updateUserPresence, 20000);
+
+    // Sayfa tekrar görünür olduğunda aktiflik bilgisini yenile.
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            updateUserPresence();
+        }
+    });
+
+    // =========================================
+    // AKTİF KULLANICILARI LİSTELE
+    // =========================================
+
+    db.collection('active_users').onSnapshot(snapshot => {
+        const container = document.getElementById('activeUsersContainer');
+
+        const now = Date.now();
+        const activeUsers = [];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+
+            if (
+                data.userId &&
+                data.userId !== userId &&
+                now - Number(data.lastSeen || 0) < 90000
+            ) {
+                activeUsers.push(data);
+            }
         });
 
-        // Beğeni Butonu Mantığı
-        function toggleLike(postId) {
-            const postRef = db.collection('posts').doc(postId);
-            db.runTransaction(transaction => {
-                return transaction.get(postRef).then(doc => {
-                    if (!doc.exists) return;
-                    let likes = doc.data().likes || [];
-                    if (likes.includes(currentUser)) {
-                        likes = likes.filter(user => user !== currentUser);
-                    } else {
-                        likes.push(currentUser);
-                    }
-                    transaction.update(postRef, { likes: likes });
-                });
-            }).catch(err => console.error("Beğeni hatası:", err));
-        }
+        // Kendimizi de listede gösterebiliriz.
+        activeUsers.push({
+            userId: userId,
+            name: currentUser,
+            photo: currentAvatar,
+            lastSeen: now
+        });
 
-        // Sekme Değiştirme
-        function switchTab(tab) {
-            document.getElementById('navFeed').className = `flex flex-col items-center transition ${tab === 'feed' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'}`;
-            document.getElementById('navUsers').className = `flex flex-col items-center transition ${tab === 'users' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'}`;
-            document.getElementById('navChat').className = `flex flex-col items-center transition ${tab === 'chat' ? 'text-orange-500' : 'text-gray-400 hover:text-gray-200'}`;
-            
-            if (tab !== 'feed') {
-                alert("Bu sekme henüz yapım aşamasında!");
-                switchTab('feed');
-            }
-        }
-
-        // Yardımcı Fonksiyonlar
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        function timeAgo(timestamp) {
-            if (!timestamp) return 'şimdi';
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            if (seconds < 60) return 'az önce';
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `${minutes} dk önce`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `${hours} sa önce`;
-            return `${Math.floor(hours / 24)} gün önce`;
-        }
-    </script>
-</body>
-</html>
+        activeUsers.sort((a, b) =>
+            String(a.nam
