@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WPL Live</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{colors:{darkBg:'#0f172a',cardBg:'#1e293b',accent:'#f97316'}}}};
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+.avatar{width:38px;height:38px;border-radius:9999px;object-fit:cover;background:#334155;flex-shrink:0}
+.avatar-sm{width:30px;height:30px;border-radius:9999px;object-fit:cover;background:#334155;flex-shrink:0}
+.modal-backdrop{background:rgba(0,0,0,.72)}
+</style>
+</head>
+<body class="bg-[#0b0f19] text-gray-100 min-h-screen pb-20 font-sans selection:bg-orange-500 selection:text-white">
+<header class="sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur-md border-b border-gray-800 px-4 py-3 flex items-center justify-between">
+  <div class="flex items-center space-x-2"><i class="fa-solid fa-bolt text-orange-500 text-xl animate-pulse"></i><h1 class="text-lg font-bold tracking-wider bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">WPL Live</h1></div>
+  <div class="flex items-center space-x-2">
+    <label title="Profil fotoğrafı değiştir" class="cursor-pointer"><img id="headerAvatar" class="avatar" alt="Profil"><input type="file" id="profileInput" accept="image/*" class="hidden" onchange="handleProfileSelect(event)"></label>
+    <button onclick="editUsername()" class="flex items-center space-x-2 bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-700 transition"><span id="currentUsernameDisplay">Misafir...</span><i class="fa-solid fa-pen text-[10px] text-gray-400"></i></button>
+  </div>
+</header>
+<main class="max-w-xl mx-auto p-3 sm:p-4">
+  <section id="activeUsersBox" class="bg-cardBg border border-gray-800 rounded-2xl p-3 mb-4">
+    <div class="flex items-center justify-between mb-2"><h2 class="font-semibold text-sm"><i class="fa-solid fa-circle text-green-400 text-[9px] mr-2"></i>Aktif kişiler</h2><span id="activeCount" class="text-xs text-gray-400">0</span></div>
+    <div id="activeUsers" class="flex flex-wrap gap-3 text-xs text-gray-400">Aktif kişiler yükleniyor...</div>
+  </section>
+  <section class="bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-lg mb-6">
+    <div id="replyingBox" class="hidden mb-3 p-3 rounded-xl border border-orange-500/40 bg-orange-500/10">
+      <div class="flex items-start justify-between gap-2"><div class="min-w-0"><div class="text-xs text-orange-400 font-semibold mb-1">Yanıt veriliyor</div><div id="replyingPreview" class="text-xs text-gray-300 break-words"></div></div><button onclick="cancelReply()" title="Yanıtı iptal et" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button></div>
+    </div>
+    <textarea id="postContent" rows="3" placeholder="Neler oluyor?..." class="w-full bg-[#0b0f19] text-gray-100 placeholder-gray-500 border border-gray-800 rounded-xl p-3 focus:outline-none focus:border-orange-500 transition resize-none text-sm"></textarea>
+    <div id="mediaPreviewContainer" class="hidden relative mb-3 rounded-xl overflow-hidden border border-gray-800 max-h-60">
+      <img id="mediaPreview" src="" class="w-full object-cover max-h-60">
+      <button onclick="removeMedia()" class="absolute top-2 right-2 bg-black/70 hover:bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-800/60">
+      <div class="flex items-center space-x-3">
+        <label class="cursor-pointer text-gray-400 hover:text-orange-400 transition flex items-center space-x-1.5 text-xs font-medium bg-gray-800/50 px-3 py-1.5 rounded-lg border border-gray-700/50"><i class="fa-solid fa-camera text-orange-500"></i><span>Medya Yükle</span><input type="file" id="mediaInput" accept="image/*,video/*" class="hidden" onchange="handleMediaSelect(event)"></label>
+        <label class="flex items-center space-x-1.5 cursor-pointer text-xs text-gray-400 select-none"><input type="checkbox" id="anonCheck" class="rounded bg-gray-800 border-gray-700 text-orange-500 focus:ring-0"><span>Anonim</span></label>
+      </div>
+      <button id="shareButton" onclick="createPost()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-medium px-5 py-2 rounded-xl text-xs shadow-lg shadow-orange-500/20 transition active:scale-95">Paylaş</button>
+    </div>
+  </section>
+  <div id="feedContainer" class="space-y-4"><div class="text-center py-10 text-gray-500 text-sm animate-pulse">Akış yükleniyor...</div></div>
+</main>
+<nav class="fixed bottom-0 left-0 right-0 bg-[#0f172a]/90 backdrop-blur-lg border-t border-gray-800 py-2 px-6 flex justify-around items-center z-50">
+  <button onclick="switchTab('feed')" id="navFeed" class="flex flex-col items-center text-orange-500 transition"><i class="fa-solid fa-layer-group text-lg mb-0.5"></i><span class="text-[10px] font-medium">Canlı Akış</span></button>
+  <button onclick="switchTab('users')" id="navUsers" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition"><i class="fa-solid fa-users text-lg mb-0.5"></i><span class="text-[10px] font-medium">Kişiler</span></button>
+  <button onclick="switchTab('chat')" id="navChat" class="flex flex-col items-center text-gray-400 hover:text-gray-200 transition"><i class="fa-solid fa-comments text-lg mb-0.5"></i><span class="text-[10px] font-medium">Sohbet</span></button>
+</nav>
+<div id="likesModal" class="hidden fixed inset-0 z-[80] modal-backdrop flex items-center justify-center p-4" onclick="if(event.target===this)closeLikesModal()">
+  <div class="w-full max-w-sm bg-[#1e293b] border border-gray-700 rounded-2xl p-4 max-h-[75vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4"><h3 class="font-bold">Beğenenler</h3><button onclick="closeLikesModal()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button></div><div id="likesList" class="space-y-3"></div>
+  </div>
+</div>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD1AeurYNk8VA1Gm9UGek13PWbFXGAPU1g",
+  authDomain: "watchppllive.firebaseapp.com",
+  projectId: "watchppllive",
+  storageBucket: "watchppllive.firebasestorage.app",
+  messagingSenderId: "1015771032346",
+  appId: "1:1015771032346:web:fb1f156496367f93fb1aa3",
+  measurementId: "G-KWV7387RTV"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+const DEFAULT_AVATAR='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#334155"/><circle cx="40" cy="29" r="15" fill="#94a3b8"/><path d="M12 75c2-17 13-26 28-26s26 9 28 26" fill="#94a3b8"/></svg>');
+let currentUser=localStorage.getItem('wpl_username');
+if(!currentUser){currentUser='Misafir_'+Math.floor(1000+Math.random()*9000);localStorage.setItem('wpl_username',currentUser);}
+let profilePhoto=localStorage.getItem('wpl_profile_photo')||'';
+let selectedMediaBase64=null, selectedMediaType='', replyTo=null, allPosts=[];
+document.getElementById('currentUsernameDisplay').innerText=currentUser;
+function avatarFor(photo){return photo||DEFAULT_AVATAR;}
+function setHeaderAvatar(){document.getElementById('headerAvatar').src=avatarFor(profilePhoto);}
+setHeaderAvatar();
+function editUsername(){
+ const newName=prompt("Yeni kullanıcı adınızı girin:",currentUser);
+ if(newName&&newName.trim()){
+   const old=currentUser;currentUser=newName.trim();localStorage.setItem('wpl_username',currentUser);
+   document.getElementById('currentUsernameDisplay').innerText=currentUser;updateUserPresence();
+   if(old!==currentUser)db.collection('active_users').doc(old).delete().catch(()=>{});
+ }
+}
+function handleProfileSelect(event){
+ const file=event.target.files[0];if(!file)return;
+ if(!file.type.startsWith('image/')){alert('Lütfen bir resim seç.');return;}
+ if(file.size>900*1024){alert('Profil fotoğrafı en fazla 900 KB olmalı.');event.target.value='';return;}
+ const reader=new FileReader();reader.onload=e=>{
+   profilePhoto=e.target.result;localStorage.setItem('wpl_profile_photo',profilePhoto);setHeaderAvatar();updateUserPresence();
+   alert('Profil fotoğrafın kaydedildi.');
+ };reader.readAsDataURL(file);
+}
+function updateUserPresence(){
+ db.collection('active_users').doc(currentUser).set({name:currentUser,profilePhoto:profilePhoto,lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(err=>console.error('Aktif kullanıcı güncelleme hatası:',err));
+}
+updateUserPresence();setInterval(updateUserPresence,30000);
+db.collection('active_users').onSnapshot(snapshot=>{
+ const root=document.getElementById('activeUsers');root.innerHTML='';
+ const cutoff=Date.now()-90000;let users=[];
+ snapshot.forEach(doc=>{const u=doc.data();let ms=u.lastSeen&&u.lastSeen.toMillis?u.lastSeen.toMillis():0;if(ms>=cutoff)users.push({...u,id:doc.id});});
+ users.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+ document.getElementById('activeCount').textContent=users.length;
+ if(!users.length){root.textContent='Şu anda aktif kullanıcı görünmüyor.';return;}
+ users.forEach(u=>{
+   const item=document.createElement('div');item.className='flex flex-col items-center gap-1 w-14';item.title=u.name||u.id;
+   const img=document.createElement('img');img.className='avatar-sm ring-2 ring-green-500/70';img.src=avatarFor(u.profilePhoto);img.alt='';img.onerror=()=>img.src=DEFAULT_AVATAR;
+   const label=document.createElement('span');label.className='w-full truncate text-center';label.textContent=u.name||u.id;
+   item.append(img,label);root.appendChild(item);
+ });
+},err=>{document.getElementById('activeUsers').textContent='Aktif kişiler yüklenemedi.';console.error(err);});
+function handleMediaSelect(event){
+ const file=event.target.files[0];if(!file)return;
+ if(file.size>850*1024){alert('Medya dosyası Firestore sınırı nedeniyle en fazla 850 KB olmalı.');event.target.value='';return;}
+ selectedMediaType=file.type;
+ const reader=new FileReader();reader.onload=e=>{
+   selectedMediaBase64=e.target.result;
+   const container=document.getElementById('mediaPreviewContainer');container.innerHTML='';
+   if(selectedMediaType.startsWith('video/')){const v=document.createElement('video');v.src=selectedMediaBase64;v.controls=true;v.className='w-full max-h-60';container.appendChild(v);}
+   else{const img=document.createElement('img');img.id='mediaPreview';img.src=selectedMediaBase64;img.className='w-full object-cover max-h-60';container.appendChild(img);}
+   const x=document.createElement('button');x.className='absolute top-2 right-2 bg-black/70 hover:bg-black text-white w-7 h-7 rounded-full';x.innerHTML='<i class="fa-solid fa-xmark"></i>';x.onclick=removeMedia;container.appendChild(x);container.classList.remove('hidden');
+ };reader.readAsDataURL(file);
+}
+function removeMedia(){selectedMediaBase64=null;selectedMediaType='';document.getElementById('mediaInput').value='';document.getElementById('mediaPreviewContainer').classList.add('hidden');document.getElementById('mediaPreviewContainer').innerHTML='<img id="mediaPreview" src="" class="w-full object-cover max-h-60"><button onclick="removeMedia()" class="absolute top-2 right-2 bg-black/70 hover:bg-black text-white w-7 h-7 rounded-full flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>';}
+function beginReply(postId){
+ const post=allPosts.find(p=>p.id===postId);
+ if(!post){alert('Bu mesaj silinmiş, yanıt veremezsin.');return;}
+ replyTo={id:post.id,author:post.author||'Kullanıcı',content:post.content||'',media:post.media||''};
+ document.getElementById('replyingPreview').textContent=(replyTo.author+': '+(replyTo.content||'[Medya]')).slice(0,240);
+ document.getElementById('replyingBox').classList.remove('hidden');document.getElementById('postContent').focus();window.scrollTo({top:0,behavior:'smooth'});
+}
+function cancelReply(){replyTo=null;document.getElementById('replyingBox').classList.add('hidden');document.getElementById('replyingPreview').textContent='';}
+async function createPost(){
+ const content=document.getElementById('postContent').value.trim(),isAnon=document.getElementById('anonCheck').checked;
+ if(!content&&!selectedMediaBase64){alert('Lütfen bir şeyler yazın veya medya ekleyin!');return;}
+ let replyData=null;
+ if(replyTo){
+   const parent=await db.collection('posts').doc(replyTo.id).get().catch(()=>null);
+   if(!parent||!parent.exists){alert('Yanıt verilen mesaj silinmiş. Mesaj gönderilmedi.');cancelReply();return;}
+   const d=parent.data();replyData={id:replyTo.id,author:d.author||'Kullanıcı',content:(d.content||'').slice(0,500)};
+ }
+ const payload={author:isAnon?'Anonim':currentUser,authorId:currentUser,authorPhoto:isAnon?'':profilePhoto,content,media:selectedMediaBase64||'',mediaType:selectedMediaType,likes:[],createdAt:Date.now()};
+ if(replyData)payload.replyTo=replyData;
+ const button=document.getElementById('shareButton');button.disabled=true;button.textContent='Gönderiliyor...';
+ try{
+   await db.collection('posts').add(payload);
+   document.getElementById('postContent').value='';removeMedia();document.getElementById('anonCheck').checked=false;cancelReply();
+   await trimPostsTo100();
+ }catch(err){alert('Paylaşım gönderilemedi: '+err.message);}
+ finally{button.disabled=false;button.textContent='Paylaş';}
+}
+async function trimPostsTo100(){
+ try{
+   const snap=await db.collection('posts').get();if(snap.size<=100)return;
+   const docs=snap.docs.map(d=>({ref:d.ref,data:d.data()})).sort((a,b)=>(a.data.createdAt||0)-(b.data.createdAt||0));
+   const batch=db.batch();docs.slice(0,snap.size-100).forEach(x=>batch.delete(x.ref));await batch.commit();
+ }catch(err){console.error('100 gönderi sınırı uygulanamadı:',err);alert('Gönderi paylaşıldı ancak eski gönderiler otomatik temizlenemedi. Firestore izinlerini kontrol et.');}
+}
+db.collection('posts').onSnapshot(snapshot=>{
+ const feed=document.getElementById('feedContainer');feed.innerHTML='';
+ allPosts=snapshot.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+ if(!allPosts.length){feed.innerHTML='<div class="text-center py-10 text-gray-500 text-sm">Henüz paylaşım yok. İlk sen paylaş!</div>';return;}
+ allPosts.forEach(post=>{
+   const likes=Array.isArray(post.likes)?post.likes:[],isLiked=likes.includes(currentUser);
+   const card=document.createElement('article');card.className='bg-cardBg border border-gray-800 rounded-2xl p-4 shadow-md';
+   const top=document.createElement('div');top.className='flex items-center justify-between gap-2 mb-3';
+   const identity=document.createElement('div');identity.className='flex items-center gap-2 min-w-0';
+   const avatar=document.createElement('img');avatar.className='avatar';avatar.src=avatarFor(post.authorPhoto);avatar.alt='';avatar.onerror=()=>avatar.src=DEFAULT_AVATAR;
+   const names=document.createElement('div');names.className='min-w-0';
+   const name=document.createElement('div');name.className='font-semibold text-xs text-orange-400 truncate';name.textContent=post.author||'Kullanıcı';
+   const time=document.createElement('div');time.className='text-[10px] text-gray-500';time.textContent=timeAgo(post.createdAt);
+   names.append(name,time);identity.append(avatar,names);top.appendChild(identity);
+   const actions=document.createElement('div');actions.className='flex items-center gap-3 flex-shrink-0';
+   const replyBtn=document.createElement('button');replyBtn.className='text-xs text-gray-400 hover:text-orange-400';replyBtn.innerHTML='<i class="fa-solid fa-reply mr-1"></i>Yanıt ver';replyBtn.onclick=()=>beginReply(post.id);actions.appendChild(replyBtn);
+   if(post.authorId===currentUser||(post.authorId==null&&post.author===currentUser)){
+     const del=document.createElement('button');del.className='text-gray-500 hover:text-red-400 p-1';del.title='Gönderimi sil';del.innerHTML='<i class="fa-solid fa-trash"></i>';del.onclick=()=>deletePost(post.id);actions.appendChild(del);
+   }
+   top.appendChild(actions);card.appendChild(top);
+   if(post.replyTo){
+     const quote=document.createElement('button');quote.className='w-full text-left mb-3 p-3 rounded-xl border border-gray-700 bg-[#0b0f19]/70 block';
+     quote.innerHTML='<div class="text-[11px] text-orange-400 mb-1"><i class="fa-solid fa-reply mr-1"></i>Yanıtlanan mesaj · '+escapeHtml(post.replyTo.author||'Kullanıcı')+'</div><div class="text-xs text-gray-400 break-words">'+escapeHtml(post.replyTo.content||'[Medya]')+'</div>';
+     quote.onclick=async()=>{const exists=await db.collection('posts').doc(post.replyTo.id).get().catch(()=>null);if(!exists||!exists.exists){alert('Bu mesaj silinmiş, yanıt veremezsin.');return;}const target=document.getElementById('post-'+post.replyTo.id);if(target)target.scrollIntoView({behavior:'smooth',block:'center'});else alert('Yanıtlanan mesaj akışta bulunamadı.');};card.appendChild(quote);
+   }
+   const content=document.createElement('p');content.className='text-sm text-gray-200 whitespace-pre-wrap break-words';content.textContent=post.content||'';card.appendChild(content);
+   if(post.media){let media;if((post.mediaType||'').startsWith('video/')){media=document.createElement('video');media.controls=true;}else{media=document.createElement('img');media.alt='Gönderi medyası';}media.src=post.media;media.className='mt-3 rounded-xl border border-gray-800 w-full object-contain max-h-80';card.appendChild(media);}
+   const footer=document.createElement('div');footer.className='flex items-center gap-3 mt-3 pt-3 border-t border-gray-800/60 text-xs text-gray-400';
+   const likeBtn=document.createElement('button');likeBtn.className='flex items-center gap-1.5 hover:text-orange-400 transition '+(isLiked?'text-orange-500 font-bold':'');likeBtn.innerHTML='<i class="'+(isLiked?'fa-solid':'fa-regular')+' fa-heart text-sm"></i><span>'+likes.length+'</span>';likeBtn.onclick=()=>toggleLike(post.id);footer.appendChild(likeBtn);
+   const who=document.createElement('button');who.className='text-gray-400 hover:text-orange-400';who.textContent='Beğenenler';who.onclick=()=>showLikes(post.id);footer.appendChild(who);
+   card.appendChild(footer);card.id='post-'+post.id;feed.appendChild(card);
+ });
+},error=>{console.error('Akış yüklenirken hata:',error);document.getElementById('feedContainer').innerHTML='<div class="text-center py-10 text-red-400 text-sm">Akış yüklenemedi. Firestore yapılandırmasını ve güvenlik kurallarını kontrol edin.</div>';});
+function toggleLike(postId){
+ const ref=db.collection('posts').doc(postId);
+ db.runTransaction(async transaction=>{
+   const doc=await transaction.get(ref);if(!doc.exists)return;
+   const data=doc.data();
+   const likes=Array.isArray(data.likes)?data.likes:[];
+   const likePhotos=Object.assign({},data.likePhotos||{});
+   if(likes.includes(currentUser)){transaction.update(ref,{likes:likes.filter(u=>u!==currentUser),likePhotos:(delete likePhotos[currentUser],likePhotos)});}
+   else{likePhotos[currentUser]=profilePhoto||'';transaction.update(ref,{likes:[...likes,currentUser],likePhotos:likePhotos});}
+ }).catch(err=>{console.error('Beğeni hatası:',err);alert('Beğeni kaydedilemedi: '+err.message);});
+}
+async function showLikes(postId){
+ const post=allPosts.find(p=>p.id===postId);if(!post)return;
+ const likes=Array.isArray(post.likes)?post.likes:[];
+ const list=document.getElementById('likesList');list.innerHTML='';
+ document.getElementById('likesModal').classList.remove('hidden');
+ if(!likes.length){list.textContent='Henüz beğeni yok.';return;}
+ for(const username of likes){
+   const row=document.createElement('div');row.className='flex items-center gap-3';
+   const img=document.createElement('img');img.className='avatar-sm';img.src=(post.likePhotos&&post.likePhotos[username])||DEFAULT_AVATAR;img.alt='';img.onerror=()=>img.src=DEFAULT_AVATAR;
+   const label=document.createElement('span');label.className='text-sm';label.textContent=username;
+   row.append(img,label);list.appendChild(row);
+   if(!(post.likePhotos&&post.likePhotos[username]))db.collection('active_users').doc(username).get().then(s=>{if(s.exists&&s.data().profilePhoto)img.src=s.data().profilePhoto;}).catch(()=>{});
+ }
+}
+function closeLikesModal(){document.getElementById('likesModal').classList.add('hidden');}
+async function deletePost(postId){
+ if(!confirm('Bu gönderiyi silmek istediğine emin misin?'))return;
+ try{const ref=db.collection('posts').doc(postId);const snap=await ref.get();if(!snap.exists)return;const p=snap.data();if(!(p.authorId===currentUser||(p.authorId==null&&p.author===currentUser))){alert('Yalnızca kendi gönderini silebilirsin.');return;}await ref.delete();}
+ catch(err){alert('Gönderi silinemedi: '+err.message);}
+}
+function switchTab(tab){
+ document.getElementById('navFeed').className='flex flex-col items-center transition '+(tab==='feed'?'text-orange-500':'text-gray-400 hover:text-gray-200');
+ document.getElementById('navUsers').className='flex flex-col items-center transition '+(tab==='users'?'text-orange-500':'text-gray-400 hover:text-gray-200');
+ document.getElementById('navChat').className='flex flex-col items-center transition '+(tab==='chat'?'text-orange-500':'text-gray-400 hover:text-gray-200');
+ if(tab!=='feed'){alert('Bu sekme henüz yapım aşamasında!');switchTab('feed');}
+}
+function escapeHtml(str){if(!str)return '';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+function timeAgo(timestamp){if(!timestamp)return 'şimdi';const seconds=Math.floor((Date.now()-timestamp)/1000);if(seconds<60)return 'az önce';const minutes=Math.floor(seconds/60);if(minutes<60)return minutes+' dk önce';const hours=Math.floor(minutes/60);if(hours<24)return hours+' sa önce';return Math.floor(hours/24)+' gün önce';}
+</script>
+</body>
+</html>
